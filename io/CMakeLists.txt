@@ -2,6 +2,7 @@ set(MODULE_NAME io)
 
 SET(MODULE_DEPENDENCIES
     common
+    surface
     )
 
 include(includes.cmake)
@@ -24,10 +25,12 @@ include_directories(${INCLUDE_DIRS})
 
 set(INCS
     include/dip/${MODULE_NAME}/hdf5wrapper.h
+    include/dip/${MODULE_NAME}/objfile.h
     )
 
 set(SRCS
     src/hdf5wrapper.cpp
+    src/objfile.cpp
     )
 
 set(LIBS

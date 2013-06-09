@@ -26,47 +26,21 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-// Define commonly used datatypes.
-
-#ifndef DIP_COMMON_TYPES_H
-#define DIP_COMMON_TYPES_H
-
-#include <stddef.h>
+#include <dip/sampling/downsample.h>
 
 namespace dip {
 
-typedef struct {
-  float x;
-  float y;
-  float z;
-} Vertex;
+extern void DownsampleKernel(int factor, int max_difference,
+                             int width, int height,
+                             int downsampled_width, int downsampled_height,
+                             const Depth *depth, Depth *downsampled_depth);
 
-typedef struct {
-  float x;
-  float y;
-  float z;
-} Vector;
-
-typedef struct {
-  float *x;
-  float *y;
-  float *z;
-} Vertices;
-
-typedef struct {
-  float *x;
-  float *y;
-  float *z;
-} Normals;
-
-typedef struct {
-  unsigned char r;
-  unsigned char g;
-  unsigned char b;
-} Color;
-
-typedef unsigned short Depth;
+void Downsample::Run(int factor, int max_difference, int width, int height,
+                     int downsampled_width, int downsampled_height,
+                     const Depth *depth, Depth *downsampled_depth) {
+  DownsampleKernel(factor, max_difference, width, height,
+                   downsampled_width, downsampled_height,
+                   depth, downsampled_depth);
+}
 
 } // namespace dip
-
-#endif // DIP_COMMON_TYPES_H

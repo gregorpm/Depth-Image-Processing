@@ -26,47 +26,18 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-// Define commonly used datatypes.
-
-#ifndef DIP_COMMON_TYPES_H
-#define DIP_COMMON_TYPES_H
-
-#include <stddef.h>
+#include <dip/point_cloud/backprojection.h>
 
 namespace dip {
 
-typedef struct {
-  float x;
-  float y;
-  float z;
-} Vertex;
+extern void BackProjectionKernel(int width, int height, float fx, float fy,
+                                 float cx, float cy, const Depth *depth,
+                                 Vertices vertices, Normals normals);
 
-typedef struct {
-  float x;
-  float y;
-  float z;
-} Vector;
-
-typedef struct {
-  float *x;
-  float *y;
-  float *z;
-} Vertices;
-
-typedef struct {
-  float *x;
-  float *y;
-  float *z;
-} Normals;
-
-typedef struct {
-  unsigned char r;
-  unsigned char g;
-  unsigned char b;
-} Color;
-
-typedef unsigned short Depth;
+void BackProjection::Run(int width, int height, float fx, float fy,
+                         float cx, float cy, const Depth *depth,
+                         Vertices vertices, Normals normals) {
+  BackProjectionKernel(width, height, fx, fy, cx, cy, depth, vertices, normals);
+}
 
 } // namespace dip
-
-#endif // DIP_COMMON_TYPES_H

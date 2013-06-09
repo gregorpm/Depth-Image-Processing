@@ -26,47 +26,42 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-// Define commonly used datatypes.
+#ifndef DIP_REGISTRATION_ICP_H
+#define DIP_REGISTRATION_ICP_H
 
-#ifndef DIP_COMMON_TYPES_H
-#define DIP_COMMON_TYPES_H
+#include <Eigen/Dense>
 
-#include <stddef.h>
+#include <dip/common/types.h>
+#include <dip/common/macros.h>
 
 namespace dip {
 
-typedef struct {
-  float x;
-  float y;
-  float z;
-} Vertex;
+class ICP {
+public:
+  ICP();
+  ~ICP();
 
-typedef struct {
-  float x;
-  float y;
-  float z;
-} Vector;
+  int Run(int max_iterations, int min_correspondences,
+          float max_rotation, float max_translation,
+          float min_error_difference,
+          float distance_threshold, float normal_threshold,
+          float fx, float fy, float cx, float cy,
+          int src_width, int src_height,
+          int dst_width, int dst_height,
+          Vertices src_vertices, Normals src_normals,
+          Vertices dst_vertices, Normals dst_normals,
+          const Eigen::Matrix4f &previous_transformation,
+          Eigen::Matrix4f &transformation);
 
-typedef struct {
-  float *x;
-  float *y;
-  float *z;
-} Vertices;
+private:
+  Eigen::Matrix4f ConstructTransform(Eigen::VectorXf &x);
 
-typedef struct {
-  float *x;
-  float *y;
-  float *z;
-} Normals;
+  float *buffer_[29];
+  int bytes_;
 
-typedef struct {
-  unsigned char r;
-  unsigned char g;
-  unsigned char b;
-} Color;
-
-typedef unsigned short Depth;
+  DISALLOW_COPY_AND_ASSIGN(ICP);
+};
 
 } // namespace dip
 
-#endif // DIP_COMMON_TYPES_H
+#endif // DIP_REGISTRATION_ICP_H

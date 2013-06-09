@@ -26,47 +26,33 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-// Define commonly used datatypes.
+#ifndef DIP_SURFACE_RAYCASTING_H
+#define DIP_SURFACE_RAYCASTING_H
 
-#ifndef DIP_COMMON_TYPES_H
-#define DIP_COMMON_TYPES_H
+#include <Eigen/Dense>
 
-#include <stddef.h>
+#include <dip/common/types.h>
+#include <dip/common/macros.h>
+#include <dip/surface/voxel.h>
 
 namespace dip {
 
-typedef struct {
-  float x;
-  float y;
-  float z;
-} Vertex;
+class RayCasting {
+public:
+  RayCasting() {}
+  ~RayCasting() {}
 
-typedef struct {
-  float x;
-  float y;
-  float z;
-} Vector;
+  void Run(float max_distance, float max_truncation, int volume_size,
+           float volume_dimension, float voxel_dimension, int width, int height,
+           float fx, float fy, float cx, float cy, Vertex center,
+           const Eigen::Matrix4f &transformation, const Voxel *volume,
+           Vertices model_vertices, Normals model_normals,
+           Color *normal_map = NULL);
 
-typedef struct {
-  float *x;
-  float *y;
-  float *z;
-} Vertices;
-
-typedef struct {
-  float *x;
-  float *y;
-  float *z;
-} Normals;
-
-typedef struct {
-  unsigned char r;
-  unsigned char g;
-  unsigned char b;
-} Color;
-
-typedef unsigned short Depth;
+private:
+  DISALLOW_COPY_AND_ASSIGN(RayCasting);
+};
 
 } // namespace dip
 
-#endif // DIP_COMMON_TYPES_H
+#endif // DIP_SURFACE_RAYCASTING_H

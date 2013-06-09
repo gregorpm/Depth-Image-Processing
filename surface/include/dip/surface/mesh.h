@@ -26,47 +26,35 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-// Define commonly used datatypes.
+#ifndef DIP_SURFACE_MESH_H
+#define DIP_SURFACE_MESH_H
 
-#ifndef DIP_COMMON_TYPES_H
-#define DIP_COMMON_TYPES_H
+#include <vector>
 
-#include <stddef.h>
+#include <dip/common/types.h>
 
 namespace dip {
 
 typedef struct {
-  float x;
-  float y;
-  float z;
-} Vertex;
+  unsigned int a, b, c;
+} Face;
 
-typedef struct {
-  float x;
-  float y;
-  float z;
-} Vector;
+class Mesh {
+public:
+  void AddVertex(const Vertex &vertex) { vertices_.push_back(vertex); }
+  void AddFace(const Face &face)       { faces_.push_back(face); }
 
-typedef struct {
-  float *x;
-  float *y;
-  float *z;
-} Vertices;
+  Vertex GetVertex(int n) const        { return vertices_.at(n); }
+  Face GetFace(int n) const            { return faces_.at(n); }
 
-typedef struct {
-  float *x;
-  float *y;
-  float *z;
-} Normals;
+  unsigned int VertexCount() const     { return vertices_.size(); }
+  unsigned int FaceCount() const       { return faces_.size(); }
 
-typedef struct {
-  unsigned char r;
-  unsigned char g;
-  unsigned char b;
-} Color;
-
-typedef unsigned short Depth;
+private:
+  std::vector<Vertex> vertices_;
+  std::vector<Face> faces_;
+};
 
 } // namespace dip
 
-#endif // DIP_COMMON_TYPES_H
+#endif // DIP_SURFACE_MESH_H

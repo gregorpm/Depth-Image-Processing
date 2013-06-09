@@ -1,6 +1,7 @@
-set(MODULE_NAME common)
+set(MODULE_NAME registration)
 
 SET(MODULE_DEPENDENCIES
+    common
     )
 
 include(includes.cmake)
@@ -22,17 +23,12 @@ set(INCLUDE_DIRS
 include_directories(${INCLUDE_DIRS})
 
 set(INCS
-    include/dip/${MODULE_NAME}/error.h
-    include/dip/${MODULE_NAME}/macros.h
-    include/dip/${MODULE_NAME}/memory.h
-    include/dip/${MODULE_NAME}/reduction.h
-    include/dip/${MODULE_NAME}/types.h
+    include/dip/${MODULE_NAME}/icp.h
     )
 
 set(SRCS
-    src/error.cu
-    src/memory.cu
-    src/reduction.cu
+    src/icp.cpp
+    src/icp.cu
     )
 
 set(LIBS

@@ -1,6 +1,7 @@
-set(MODULE_NAME common)
+set(MODULE_NAME surface)
 
 SET(MODULE_DEPENDENCIES
+    common
     )
 
 include(includes.cmake)
@@ -22,17 +23,19 @@ set(INCLUDE_DIRS
 include_directories(${INCLUDE_DIRS})
 
 set(INCS
-    include/dip/${MODULE_NAME}/error.h
-    include/dip/${MODULE_NAME}/macros.h
-    include/dip/${MODULE_NAME}/memory.h
-    include/dip/${MODULE_NAME}/reduction.h
-    include/dip/${MODULE_NAME}/types.h
+    include/dip/${MODULE_NAME}/marchingcubes.h
+    include/dip/${MODULE_NAME}/mesh.h
+    include/dip/${MODULE_NAME}/raycasting.h
+    include/dip/${MODULE_NAME}/volumetric.h
+    include/dip/${MODULE_NAME}/voxel.h
     )
 
 set(SRCS
-    src/error.cu
-    src/memory.cu
-    src/reduction.cu
+    src/marchingcubes.cpp
+    src/raycasting.cpp
+    src/raycasting.cu
+    src/volumetric.cpp
+    src/volumetric.cu
     )
 
 set(LIBS

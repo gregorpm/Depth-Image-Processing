@@ -26,47 +26,37 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-// Define commonly used datatypes.
+#include <dip/surface/raycasting.h>
 
-#ifndef DIP_COMMON_TYPES_H
-#define DIP_COMMON_TYPES_H
-
-#include <stddef.h>
+using namespace Eigen;
 
 namespace dip {
 
-typedef struct {
-  float x;
-  float y;
-  float z;
-} Vertex;
+extern void RayCastingKernel(float max_distance, float max_truncation,
+                             int volume_size, float volume_dimension,
+                             float voxel_dimension, int width, int height,
+                             float fx, float fy, float cx, float cy,
+                             Vertex center, float *transformation,
+                             const Voxel *volume, Vertices model_vertices,
+                             Normals model_normals, Color *normal_map);
 
-typedef struct {
-  float x;
-  float y;
-  float z;
-} Vector;
+void RayCasting::Run(float max_distance, float max_truncation, int volume_size,
+                     float volume_dimension, float voxel_dimension,
+                     int width, int height, float fx, float fy,
+                     float cx, float cy, Vertex center,
+                     const Matrix4f &transformation, const Voxel *volume,
+                     Vertices model_vertices, Normals model_normals,
+                     Color *normal_map) {
+  float T[16];
+  for (int m = 0; m < 4; m++) {
+    for (int n = 0; n < 4; n++) {
+      T[n + m * 4] = transformation(m, n);
+    }
+  }
 
-typedef struct {
-  float *x;
-  float *y;
-  float *z;
-} Vertices;
-
-typedef struct {
-  float *x;
-  float *y;
-  float *z;
-} Normals;
-
-typedef struct {
-  unsigned char r;
-  unsigned char g;
-  unsigned char b;
-} Color;
-
-typedef unsigned short Depth;
+  RayCastingKernel(max_distance, max_truncation, volume_size, volume_dimension,
+                   voxel_dimension, width, height, fx, fy, cx, cy, center, T,
+                   volume, model_vertices, model_normals, normal_map);
+}
 
 } // namespace dip
-
-#endif // DIP_COMMON_TYPES_H

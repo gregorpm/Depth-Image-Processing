@@ -1,6 +1,7 @@
-set(MODULE_NAME common)
+set(MODULE_NAME point_cloud)
 
 SET(MODULE_DEPENDENCIES
+    common
     )
 
 include(includes.cmake)
@@ -22,17 +23,15 @@ set(INCLUDE_DIRS
 include_directories(${INCLUDE_DIRS})
 
 set(INCS
-    include/dip/${MODULE_NAME}/error.h
-    include/dip/${MODULE_NAME}/macros.h
-    include/dip/${MODULE_NAME}/memory.h
-    include/dip/${MODULE_NAME}/reduction.h
-    include/dip/${MODULE_NAME}/types.h
+    include/dip/${MODULE_NAME}/backprojection.h
+    include/dip/${MODULE_NAME}/centroid.h
     )
 
 set(SRCS
-    src/error.cu
-    src/memory.cu
-    src/reduction.cu
+    src/backprojection.cpp
+    src/backprojection.cu
+    src/centroid.cpp
+    src/centroid.cu
     )
 
 set(LIBS

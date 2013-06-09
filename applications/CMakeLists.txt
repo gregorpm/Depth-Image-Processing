@@ -1,6 +1,7 @@
 set(APPLICATION_NAMES
     camera_viewer
     depth_capture
+    object_modeling
     )
 
 foreach(APPLICATION_NAME ${APPLICATION_NAMES})

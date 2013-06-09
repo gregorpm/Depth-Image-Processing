@@ -26,47 +26,14 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-// Define commonly used datatypes.
-
-#ifndef DIP_COMMON_TYPES_H
-#define DIP_COMMON_TYPES_H
-
-#include <stddef.h>
+#ifndef DIP_COMMON_REDUCTION_H
+#define DIP_COMMON_REDUCTION_H
 
 namespace dip {
 
-typedef struct {
-  float x;
-  float y;
-  float z;
-} Vertex;
-
-typedef struct {
-  float x;
-  float y;
-  float z;
-} Vector;
-
-typedef struct {
-  float *x;
-  float *y;
-  float *z;
-} Vertices;
-
-typedef struct {
-  float *x;
-  float *y;
-  float *z;
-} Normals;
-
-typedef struct {
-  unsigned char r;
-  unsigned char g;
-  unsigned char b;
-} Color;
-
-typedef unsigned short Depth;
+extern int Reduce(int elements, int *buffer);
+extern float Reduce(int elements, float *buffer);
 
 } // namespace dip
 
-#endif // DIP_COMMON_TYPES_H
+#endif // DIP_COMMON_REDUCTION_H

@@ -26,47 +26,32 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-// Define commonly used datatypes.
+#ifndef DIP_SURFACE_VOLUMETRIC_H
+#define DIP_SURFACE_VOLUMETRIC_H
 
-#ifndef DIP_COMMON_TYPES_H
-#define DIP_COMMON_TYPES_H
+#include <Eigen/Dense>
 
-#include <stddef.h>
+#include <dip/common/types.h>
+#include <dip/common/macros.h>
+#include <dip/surface/voxel.h>
 
 namespace dip {
 
-typedef struct {
-  float x;
-  float y;
-  float z;
-} Vertex;
+class Volumetric {
+public:
+  Volumetric() {}
+  ~Volumetric() {}
 
-typedef struct {
-  float x;
-  float y;
-  float z;
-} Vector;
+  void Run(int volume_size, float volume_dimension, float voxel_dimension,
+           float max_truncation, float max_weight, int width, int height,
+           float fx, float fy, float cx, float cy, Vertex center,
+           const Eigen::Matrix4f &transformation, const Depth *depth,
+           const Normals normals, Voxel *volume);
 
-typedef struct {
-  float *x;
-  float *y;
-  float *z;
-} Vertices;
-
-typedef struct {
-  float *x;
-  float *y;
-  float *z;
-} Normals;
-
-typedef struct {
-  unsigned char r;
-  unsigned char g;
-  unsigned char b;
-} Color;
-
-typedef unsigned short Depth;
+private:
+  DISALLOW_COPY_AND_ASSIGN(Volumetric);
+};
 
 } // namespace dip
 
-#endif // DIP_COMMON_TYPES_H
+#endif // DIP_POINT_CLOUD_BACKPROJECTION_H

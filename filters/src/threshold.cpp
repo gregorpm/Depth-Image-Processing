@@ -26,47 +26,16 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-// Define commonly used datatypes.
-
-#ifndef DIP_COMMON_TYPES_H
-#define DIP_COMMON_TYPES_H
-
-#include <stddef.h>
+#include <dip/filters/threshold.h>
 
 namespace dip {
 
-typedef struct {
-  float x;
-  float y;
-  float z;
-} Vertex;
+extern void ThresholdKernel(int min_depth, int max_depth, int width, int height,
+                            Depth *depth);
 
-typedef struct {
-  float x;
-  float y;
-  float z;
-} Vector;
-
-typedef struct {
-  float *x;
-  float *y;
-  float *z;
-} Vertices;
-
-typedef struct {
-  float *x;
-  float *y;
-  float *z;
-} Normals;
-
-typedef struct {
-  unsigned char r;
-  unsigned char g;
-  unsigned char b;
-} Color;
-
-typedef unsigned short Depth;
+void Threshold::Run(int min_depth, int max_depth, int width, int height,
+                    Depth *depth) {
+  ThresholdKernel(min_depth, max_depth, width, height, depth);
+}
 
 } // namespace dip
-
-#endif // DIP_COMMON_TYPES_H

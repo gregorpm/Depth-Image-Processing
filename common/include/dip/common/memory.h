@@ -26,47 +26,28 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-// Define commonly used datatypes.
-
-#ifndef DIP_COMMON_TYPES_H
-#define DIP_COMMON_TYPES_H
-
-#include <stddef.h>
+#ifndef DIP_COMMON_MEMORY_H
+#define DIP_COMMON_MEMORY_H
 
 namespace dip {
 
-typedef struct {
-  float x;
-  float y;
-  float z;
-} Vertex;
+extern void Allocate(void **buffer, int bytes);
+extern void Deallocate(void *buffer);
 
-typedef struct {
-  float x;
-  float y;
-  float z;
-} Vector;
+extern void Clear(void *buffer, int bytes);
+extern void Set(void *buffer, int value, int bytes);
 
-typedef struct {
-  float *x;
-  float *y;
-  float *z;
-} Vertices;
+extern void Upload(void *dst, const void *src, int bytes);
+extern void Download(void *dst, const void *src, int bytes);
+extern void Copy(void *dst, const void *src, int bytes);
 
-typedef struct {
-  float *x;
-  float *y;
-  float *z;
-} Normals;
-
-typedef struct {
-  unsigned char r;
-  unsigned char g;
-  unsigned char b;
-} Color;
-
-typedef unsigned short Depth;
+extern void UploadImage(void *dst, const void *src, int width, int height,
+                        int dst_pitch, int src_pitch);
+extern void DownloadImage(void *dst, const void *src, int width, int height,
+                          int dst_pitch, int src_pitch);
+extern void CopyImage(void *dst, const void *src, int width, int height,
+                      int dst_pitch, int src_pitch);
 
 } // namespace dip
 
-#endif // DIP_COMMON_TYPES_H
+#endif // DIP_COMMON_MEMORY_H

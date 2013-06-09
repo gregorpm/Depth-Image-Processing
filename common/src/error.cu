@@ -26,47 +26,15 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-// Define commonly used datatypes.
-
-#ifndef DIP_COMMON_TYPES_H
-#define DIP_COMMON_TYPES_H
-
-#include <stddef.h>
+#include <stdio.h>
 
 namespace dip {
 
-typedef struct {
-  float x;
-  float y;
-  float z;
-} Vertex;
-
-typedef struct {
-  float x;
-  float y;
-  float z;
-} Vector;
-
-typedef struct {
-  float *x;
-  float *y;
-  float *z;
-} Vertices;
-
-typedef struct {
-  float *x;
-  float *y;
-  float *z;
-} Normals;
-
-typedef struct {
-  unsigned char r;
-  unsigned char g;
-  unsigned char b;
-} Color;
-
-typedef unsigned short Depth;
+void CUDAError(cudaError_t result, char *file, int line) {
+  if (result != cudaSuccess) {
+    fprintf(stderr,"CUDA Error: %s %s %d\n", cudaGetErrorString(result),
+            file, line);
+  }
+}
 
 } // namespace dip
-
-#endif // DIP_COMMON_TYPES_H

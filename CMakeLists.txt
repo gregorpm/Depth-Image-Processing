@@ -27,7 +27,13 @@ find_package(OpenNI2 REQUIRED)
 set(MODULE_NAMES
     cameras
     common
+    filters
     io
+    point_cloud
+    projects
+    registration
+    sampling
+    surface
     visualization
     )
 

@@ -1,6 +1,13 @@
-set(MODULE_NAME common)
+set(MODULE_NAME projects)
 
 SET(MODULE_DEPENDENCIES
+    common
+    filters
+    point_cloud
+    sampling
+    surface
+    registration
+    visualization
     )
 
 include(includes.cmake)
@@ -22,24 +29,18 @@ set(INCLUDE_DIRS
 include_directories(${INCLUDE_DIRS})
 
 set(INCS
-    include/dip/${MODULE_NAME}/error.h
-    include/dip/${MODULE_NAME}/macros.h
-    include/dip/${MODULE_NAME}/memory.h
-    include/dip/${MODULE_NAME}/reduction.h
-    include/dip/${MODULE_NAME}/types.h
+    include/dip/${MODULE_NAME}/objectmodeling.h
     )
 
 set(SRCS
-    src/error.cu
-    src/memory.cu
-    src/reduction.cu
+    src/objectmodeling.cpp
     )
 
 set(LIBS
     ${MODULE_DEPENDENCIES}
     )
 
-cuda_add_library(${MODULE_NAME} ${SRCS} ${INCS})
+add_library(${MODULE_NAME} ${SRCS} ${INCS})
 target_link_libraries(${MODULE_NAME} ${LIBS})
 
 install(TARGETS ${MODULE_NAME} DESTINATION ${LIB_INSTALL_DIR})

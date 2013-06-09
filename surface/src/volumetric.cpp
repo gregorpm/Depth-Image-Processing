@@ -26,47 +26,36 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-// Define commonly used datatypes.
+#include <dip/surface/volumetric.h>
 
-#ifndef DIP_COMMON_TYPES_H
-#define DIP_COMMON_TYPES_H
-
-#include <stddef.h>
+using namespace Eigen;
 
 namespace dip {
 
-typedef struct {
-  float x;
-  float y;
-  float z;
-} Vertex;
+extern void VolumetricKernel(int volume_size, float volume_dimension,
+                             float voxel_dimension, float max_truncation,
+                             float max_weight, int width, int height,
+                             float fx, float fy, float cx, float cy,
+                             Vertex center, float *transformation,
+                             const Depth *depth, const Normals normals,
+                             Voxel *volume);
 
-typedef struct {
-  float x;
-  float y;
-  float z;
-} Vector;
+void Volumetric::Run(int volume_size, float volume_dimension,
+                     float voxel_dimension, float max_truncation,
+                     float max_weight, int width, int height,
+                     float fx, float fy, float cx, float cy, Vertex center,
+                     const Matrix4f &transformation, const Depth *depth,
+                     const Normals normals, Voxel *volume) {
+  float T[16];
+  for (int m = 0; m < 4; m++) {
+    for (int n = 0; n < 4; n++) {
+      T[n + m * 4] = transformation(m, n);
+    }
+  }
 
-typedef struct {
-  float *x;
-  float *y;
-  float *z;
-} Vertices;
-
-typedef struct {
-  float *x;
-  float *y;
-  float *z;
-} Normals;
-
-typedef struct {
-  unsigned char r;
-  unsigned char g;
-  unsigned char b;
-} Color;
-
-typedef unsigned short Depth;
+  VolumetricKernel(volume_size, volume_dimension, voxel_dimension,
+                   max_truncation, max_weight, width, height, fx, fy, cx, cy,
+                   center, T, depth, normals, volume);
+}
 
 } // namespace dip
-
-#endif // DIP_COMMON_TYPES_H

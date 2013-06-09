@@ -26,47 +26,56 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-// Define commonly used datatypes.
+// This class simplifies the task of reading, modifying, and creating OBJ
+// geometry files.
 
-#ifndef DIP_COMMON_TYPES_H
-#define DIP_COMMON_TYPES_H
+#ifndef DIP_IO_OBJFILE_H
+#define DIP_IO_OBJFILE_H
 
-#include <stddef.h>
+#include <stdio.h>
+
+#include <dip/common/macros.h>
+#include <dip/surface/mesh.h>
 
 namespace dip {
 
-typedef struct {
-  float x;
-  float y;
-  float z;
-} Vertex;
+// OBJ file access modes.
+enum OBJ_MODES {
+  READ_OBJ = 1,    // Read an existing OBJ file.
+  MODIFY_OBJ = 2,  // Read/Write an existing OBJ file.
+  CREATE_OBJ = 4,  // Creates a new OBJ file.
+};
 
-typedef struct {
-  float x;
-  float y;
-  float z;
-} Vector;
+class OBJFile {
+public:
+  // Opens a OBJ file.
+  //  file_name - Name of OBJ file.
+  //  mode      - File access mode (READ_OBJ, MODIFY_OBJ, CREATE_OBJ).
+  OBJFile(const char* file_name, int mode);
+  ~OBJFile();
 
-typedef struct {
-  float *x;
-  float *y;
-  float *z;
-} Vertices;
+  // Reads a mesh from the OBJ file.
+  //  mesh - Pointer to mesh data structure.
+  // Returns zero when successful.
+  int Read(Mesh *mesh) const;
 
-typedef struct {
-  float *x;
-  float *y;
-  float *z;
-} Normals;
+  // Writes a mesh into the OBJ file.
+  //  mesh - Pointer to mesh data structure.
+  // Returns zero when successful.
+  int Write(Mesh *mesh) const;
 
-typedef struct {
-  unsigned char r;
-  unsigned char g;
-  unsigned char b;
-} Color;
+  // Returns true if the OBJ file was successfully opened.
+  bool enabled() const { return enabled_; }
 
-typedef unsigned short Depth;
+private:
+  int mode_;
+  bool enabled_;
+
+  FILE *file_;
+
+  DISALLOW_COPY_AND_ASSIGN(OBJFile);
+};
 
 } // namespace dip
 
-#endif // DIP_COMMON_TYPES_H
+#endif // DIP_IO_HDF5WRAPPER_H

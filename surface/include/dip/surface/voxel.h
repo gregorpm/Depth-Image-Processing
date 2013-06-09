@@ -26,47 +26,25 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-// Define commonly used datatypes.
-
-#ifndef DIP_COMMON_TYPES_H
-#define DIP_COMMON_TYPES_H
-
-#include <stddef.h>
+#ifndef DIP_SURFACE_VOXEL_H
+#define DIP_SURFACE_VOXEL_H
 
 namespace dip {
 
-typedef struct {
-  float x;
-  float y;
-  float z;
-} Vertex;
+#define MAX_UINT32 4294967295
 
-typedef struct {
-  float x;
-  float y;
-  float z;
-} Vector;
+#define COMPRESS(f, w) \
+          (((unsigned int)(((f + 1.0f) / 2.0f) * MAX_UINT32) & ~(0xFFFF)) | \
+          (((unsigned int)(w * MAX_UINT32) >> 0x10) & (0xFFFF)))
 
-typedef struct {
-  float *x;
-  float *y;
-  float *z;
-} Vertices;
+#define UNCOMPRESS_VALUE(v) \
+          (((float)(v & ~(0xFFFF)) / MAX_UINT32) * 2.0f - 1.0f)
 
-typedef struct {
-  float *x;
-  float *y;
-  float *z;
-} Normals;
+#define UNCOMPRESS_WEIGHT(v) \
+          ((float)((v & (0xFFFF)) << 0x10) / MAX_UINT32)
 
-typedef struct {
-  unsigned char r;
-  unsigned char g;
-  unsigned char b;
-} Color;
-
-typedef unsigned short Depth;
+typedef unsigned int Voxel;
 
 } // namespace dip
 
-#endif // DIP_COMMON_TYPES_H
+#endif // DIP_SURFACE_VOXEL_H

@@ -26,47 +26,58 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-// Define commonly used datatypes.
+#include <dip/point_cloud/centroid.h>
 
-#ifndef DIP_COMMON_TYPES_H
-#define DIP_COMMON_TYPES_H
-
-#include <stddef.h>
+#include <dip/common/memory.h>
+#include <dip/common/reduction.h>
 
 namespace dip {
 
-typedef struct {
-  float x;
-  float y;
-  float z;
-} Vertex;
+extern void CentroidKernel(int width, int height, Vertices vertices,
+                           float *buffer[4]);
 
-typedef struct {
-  float x;
-  float y;
-  float z;
-} Vector;
+Centroid::Centroid() : bytes_(0) {
+  for (int n = 0; n < 4; n++)
+    buffer_[n] = NULL;
+}
 
-typedef struct {
-  float *x;
-  float *y;
-  float *z;
-} Vertices;
+Centroid::~Centroid() {
+  for (int n = 0; n < 4; n++) {
+    if (buffer_[n] != NULL)
+      Deallocate((void*)buffer_[n]);
+  }
+}
 
-typedef struct {
-  float *x;
-  float *y;
-  float *z;
-} Normals;
+Vertex Centroid::Run(int width, int height, Vertices vertices) {
+  int required_bytes = sizeof(float) * width * height;
 
-typedef struct {
-  unsigned char r;
-  unsigned char g;
-  unsigned char b;
-} Color;
+  if (bytes_ < required_bytes) {
+    bytes_ = required_bytes;
 
-typedef unsigned short Depth;
+    for (int n = 0; n < 4; n++) {
+      if (buffer_[n] != NULL)
+        Deallocate((void*)buffer_[n]);
+
+      Allocate((void**)&(buffer_[n]), bytes_);
+    }
+  }
+
+  CentroidKernel(width, height, vertices, buffer_);
+
+  // Compute Centroid
+  Vertex center;
+  int count;
+
+  center.x = Reduce(width * height, buffer_[0]);
+  center.y = Reduce(width * height, buffer_[1]);
+  center.z = Reduce(width * height, buffer_[2]);
+  count = Reduce(width * height, buffer_[3]);
+
+  center.x /= count;
+  center.y /= count;
+  center.z /= count;
+
+  return center;
+}
 
 } // namespace dip
-
-#endif // DIP_COMMON_TYPES_H
