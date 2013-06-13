@@ -1,0 +1,4 @@
+set(INCLUDE_DIRS
+    ${INCLUDE_DIRS}
+    ${HDF5_INCLUDE_DIRS}
+    )
