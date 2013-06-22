@@ -1,6 +1,7 @@
 set(APPLICATION_NAMES
     camera_viewer
     depth_capture
+    face_modeling
     object_modeling
     )
 

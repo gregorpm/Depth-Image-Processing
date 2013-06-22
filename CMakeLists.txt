@@ -33,6 +33,7 @@ set(MODULE_NAMES
     projects
     registration
     sampling
+    segmentation
     surface
     visualization
     )

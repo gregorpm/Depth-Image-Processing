@@ -1,14 +1,7 @@
-set(MODULE_NAME projects)
+set(MODULE_NAME segmentation)
 
 SET(MODULE_DEPENDENCIES
     common
-    filters
-    point_cloud
-    sampling
-    segmentation
-    surface
-    registration
-    visualization
     )
 
 include(includes.cmake)
@@ -30,13 +23,13 @@ set(INCLUDE_DIRS
 include_directories(${INCLUDE_DIRS})
 
 set(INCS
-    include/dip/${MODULE_NAME}/facemodeling.h
-    include/dip/${MODULE_NAME}/objectmodeling.h
+    include/dip/${MODULE_NAME}/connectedcomponents.h
+    include/dip/${MODULE_NAME}/headsegmenter.h
     )
 
 set(SRCS
-    src/facemodeling.cpp
-    src/objectmodeling.cpp
+    src/connectedcomponents.cpp
+    src/headsegmenter.cpp
     )
 
 set(LIBS
