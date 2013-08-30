@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(dip)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules/" ${CMAKE_MODULE_PATH})
 
 set(BIN_INSTALL_DIR "bin")
 set(LIB_INSTALL_DIR "lib")
