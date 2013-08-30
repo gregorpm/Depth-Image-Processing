@@ -231,6 +231,8 @@ void PrimeSense::initialize(const char *uri, bool calibration) {
         printf("Unable to Create Stream\n%s\n", OpenNI::getExtendedError());
       }
     }
+
+    device_.setImageRegistrationMode(IMAGE_REGISTRATION_DEPTH_TO_COLOR);
   }
   else {
     printf("Unable to Open Camera\n%s\n", OpenNI::getExtendedError());
