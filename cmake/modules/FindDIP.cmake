@@ -26,21 +26,30 @@ set(DIP_MODULES
     )
 
 foreach(MODULE ${DIP_MODULES})
-  find_library(DIP_${MODULE}_LIBRARY
+  find_library(DIP_${MODULE}_LIBRARY_DEBUG
                NAMES ${MODULE}
-               PATHS /usr/local/lib/
-                     "$ENV{PROGRAMFILES}/dip/lib"
-                     "$ENV{PROGRAMW6432}/dip/lib"
+               PATHS /usr/local/lib/Debug
+                     "$ENV{PROGRAMFILES}/dip/lib/Debug"
+                     "$ENV{PROGRAMW6432}/dip/lib/Debug"
+               )
+
+  find_library(DIP_${MODULE}_LIBRARY_RELEASE
+               NAMES ${MODULE}
+               PATHS /usr/local/lib/Release
+                     "$ENV{PROGRAMFILES}/dip/lib/Release"
+                     "$ENV{PROGRAMW6432}/dip/lib/Release"
                )
 
   set(DIP_LIBRARIES
       ${DIP_LIBRARIES}
-      ${DIP_${MODULE}_LIBRARY}
+      debug ${DIP_${MODULE}_LIBRARY_DEBUG}
+      optimized ${DIP_${MODULE}_LIBRARY_RELEASE}
       )
 
   set(DIP_LIBRARY_VARS
       ${DIP_LIBRARY_VARS}
-      DIP_${MODULE}_LIBRARY
+      DIP_${MODULE}_LIBRARY_DEBUG
+      DIP_${MODULE}_LIBRARY_RELEASE
       )
 endforeach()
 
