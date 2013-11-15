@@ -116,6 +116,9 @@ public:
   // Returns true if the HDF5 file was successfully opened.
   bool enabled() const { return enabled_; }
 
+  // Return HDF5 file id.
+  hid_t h5file() const { return h5file_; }
+
 private:
   // Reads data from the HDF5 file.
   //  h5_file           - HDF5 file id.
