@@ -70,6 +70,9 @@ public:
   float fx(int sensor) const { return fx_[sensor]; }
   float fy(int sensor) const { return fy_[sensor]; }
 
+  // Request image resolution.
+  int resolution(int sensor, int width, int height) { return -1; }
+
 private:
   bool enabled_;
   int width_[SENSOR_TYPES], height_[SENSOR_TYPES];

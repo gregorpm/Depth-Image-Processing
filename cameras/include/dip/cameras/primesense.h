@@ -95,6 +95,9 @@ public:
   int start(int sensor);
   int stop(int sensor);
 
+  // Request image resolution.
+  int resolution(int sensor, int width, int height);
+
 private:
   // Initialize PrimeSense camera.
   //  uri - String containing the URI of the camera.

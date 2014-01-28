@@ -69,6 +69,9 @@ public:
   // Focal length of depth/color images.
   virtual float fx(int sensor) const = 0;
   virtual float fy(int sensor) const = 0;
+
+  // Request image resolution.
+  virtual int resolution(int sensor, int width, int height) = 0;
 };
 
 } // namespace dip

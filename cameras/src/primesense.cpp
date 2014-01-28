@@ -195,6 +195,35 @@ int PrimeSense::stop(int sensor) {
   return -1;
 }
 
+int PrimeSense::resolution(int sensor, int width, int height) {
+  // Stop sensor's stream.
+  if (!stop(sensor)) {
+    // Modify video mode's resolution.
+    VideoMode video_mode = stream_[sensor].getVideoMode();
+    video_mode.setResolution(width, height);
+    stream_[sensor].setVideoMode(video_mode);
+
+    // Restart sensor's stream.
+    if (!start(sensor)) {
+      // Update dimensions and focal lengths.
+      VideoMode video_mode = stream_[sensor].getVideoMode();
+
+      width_[sensor] = video_mode.getResolutionX();
+      height_[sensor] = video_mode.getResolutionY();
+
+      float horizontal_fov = stream_[sensor].getHorizontalFieldOfView();
+      float vertical_fov = stream_[sensor].getVerticalFieldOfView();
+
+      fx_[sensor] = width_[sensor] / (2.0f * tan(horizontal_fov / 2.0f));
+      fy_[sensor] = height_[sensor] / (2.0f * tan(vertical_fov / 2.0f));
+
+      return 0;
+    }
+  }
+
+  return -1;
+}
+
 void PrimeSense::initialize(const char *uri, bool calibration) {
   // Open PrimeSense camera.
   if (device_.open(uri) == STATUS_OK) {
