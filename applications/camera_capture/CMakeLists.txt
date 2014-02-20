@@ -1,4 +1,4 @@
-SET(APPICATION_NAME depth_capture)
+SET(APPICATION_NAME camera_capture)
 
 SET(MODULE_DEPENDENCIES
     cameras

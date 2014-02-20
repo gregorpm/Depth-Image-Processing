@@ -54,8 +54,10 @@ HDF5Wrapper *g_dump = NULL;
 
 Depth *g_depth = NULL;
 Color *g_colorized_depth = NULL;
+Color *g_color = NULL;
 
 GLuint g_texture;
+int g_display = DEPTH_SENSOR;
 
 void close() {
   if (g_camera != NULL)
@@ -67,6 +69,8 @@ void close() {
     delete [] g_depth;
   if (g_colorized_depth != NULL)
     delete [] g_colorized_depth;
+  if (g_color != NULL)
+    delete [] g_color;
 
   exit(0);
 }
@@ -79,9 +83,15 @@ void display() {
 
   glOrtho(0.0f, 1.0f, 0.0f, 1.0f, -10.0f, 10.0f);
 
-  // Update Frame
+  // Update depth image.
   if (g_camera->Update(g_depth)) {
-    printf("Unable to Update Frame\n");
+    printf("Unable to update depth image.\n");
+    close();
+  }
+
+  // Update color image.
+  if (g_camera->Update(g_color)) {
+    printf("Unable to update color image.\n");
     close();
   }
 
@@ -91,32 +101,58 @@ void display() {
   char group[64];
   sprintf(group, "/FRAME%04d", count);
 
-  hsize_t dimensions[2] = { (hsize_t)g_camera->height(DEPTH_SENSOR),
-                            (hsize_t)g_camera->width(DEPTH_SENSOR) };
+  hsize_t dimensions[3];
+
+  // Dump depth image.
+  dimensions[0] = (hsize_t)g_camera->height(DEPTH_SENSOR);
+  dimensions[1] = (hsize_t)g_camera->width(DEPTH_SENSOR);
 
   if (g_dump->Write("DEPTH", group, g_depth, dimensions, 2, H5T_NATIVE_SHORT)) {
-    printf("Unable to Update Dump File\n");
+    printf("Unable to dump depth image.\n");
     close();
   }
-  else {
-    count++;
+
+  // Dump color image.
+  dimensions[0] = (hsize_t)g_camera->height(COLOR_SENSOR);
+  dimensions[1] = (hsize_t)g_camera->width(COLOR_SENSOR);
+  dimensions[2] = 3;
+
+  if (g_dump->Write("COLOR", group, g_color, dimensions, 3, H5T_NATIVE_UCHAR)) {
+    printf("Unable to dump color image.\n");
+    close();
   }
 
-  // Colorize Depth
-  static Colorize colorize;
-  colorize.Run(g_camera->width(DEPTH_SENSOR), g_camera->height(DEPTH_SENSOR),
-               kMinDepth, kMaxDepth, g_depth, g_colorized_depth);
+  count++;
 
-  // Update Texture
-  glEnable(GL_TEXTURE_2D);
+  if (g_display == DEPTH_SENSOR) {
+    // Colorize Depth
+    static Colorize colorize;
+    colorize.Run(g_camera->width(DEPTH_SENSOR), g_camera->height(DEPTH_SENSOR),
+                 kMinDepth, kMaxDepth, g_depth, g_colorized_depth);
 
-  glBindTexture(GL_TEXTURE_2D, g_texture);
+    // Update Texture
+    glEnable(GL_TEXTURE_2D);
 
-  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, g_camera->width(DEPTH_SENSOR),
-                  g_camera->height(DEPTH_SENSOR), GL_RGB, GL_UNSIGNED_BYTE,
-                  g_colorized_depth);
+    glBindTexture(GL_TEXTURE_2D, g_texture);
 
-  glDisable(GL_TEXTURE_2D);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, g_camera->width(DEPTH_SENSOR),
+                    g_camera->height(DEPTH_SENSOR), GL_RGB, GL_UNSIGNED_BYTE,
+                    g_colorized_depth);
+
+    glDisable(GL_TEXTURE_2D);
+  }
+  else {
+    // Update Texture
+    glEnable(GL_TEXTURE_2D);
+
+    glBindTexture(GL_TEXTURE_2D, g_texture);
+
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, g_camera->width(COLOR_SENSOR),
+                    g_camera->height(COLOR_SENSOR), GL_RGB, GL_UNSIGNED_BYTE,
+                    g_color);
+
+    glDisable(GL_TEXTURE_2D);
+  }
 
   // Display Frame
   glEnable(GL_TEXTURE_2D);
@@ -145,6 +181,12 @@ void keyboard(unsigned char key, int x, int y) {
   case 27:
     close();
     break;
+  case '1':
+    g_display = DEPTH_SENSOR;
+    break;
+  case '2':
+    g_display = COLOR_SENSOR;
+    break;
   }
 }
 
@@ -161,7 +203,7 @@ int main(int argc, char **argv) {
 
   glutInit(&argc, argv);
 
-  // Initialize Camera
+  // Initialize PrimeSense camera.
   g_camera = new PrimeSense();
 
   if (!g_camera->enabled()) {
@@ -169,7 +211,7 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  // Initialize Dump
+  // Initialize dump file.
   g_dump = new HDF5Wrapper(argv[1], CREATE_HDF5);
 
   if (!g_dump->enabled()) {
@@ -177,31 +219,57 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  int width = g_camera->width(DEPTH_SENSOR);
-  int height = g_camera->height(DEPTH_SENSOR);
+  // Output dimensions of depth and color images.
+  int width, height;
+
+  width = g_camera->width(DEPTH_SENSOR);
+  height = g_camera->height(DEPTH_SENSOR);
 
   g_dump->Write("WIDTH", "/INFORMATION/DEPTH_SENSOR",
                 &width, H5T_NATIVE_INT);
   g_dump->Write("HEIGHT", "/INFORMATION/DEPTH_SENSOR",
                 &height, H5T_NATIVE_INT);
 
-  float fx = g_camera->fx(DEPTH_SENSOR);
-  float fy = g_camera->fy(DEPTH_SENSOR);
+  width = g_camera->width(COLOR_SENSOR);
+  height = g_camera->height(COLOR_SENSOR);
+
+  g_dump->Write("WIDTH", "/INFORMATION/COLOR_SENSOR",
+                &width, H5T_NATIVE_INT);
+  g_dump->Write("HEIGHT", "/INFORMATION/COLOR_SENSOR",
+                &height, H5T_NATIVE_INT);
+
+  // Output focal length of depth and color images.
+  float fx, fy;
+
+  fx = g_camera->fx(DEPTH_SENSOR);
+  fy = g_camera->fy(DEPTH_SENSOR);
 
   g_dump->Write("FX", "/INFORMATION/DEPTH_SENSOR",
                 &fx, H5T_NATIVE_FLOAT);
   g_dump->Write("FY", "/INFORMATION/DEPTH_SENSOR",
                 &fy, H5T_NATIVE_FLOAT);
 
+  fx = g_camera->fx(COLOR_SENSOR);
+  fy = g_camera->fy(COLOR_SENSOR);
+
+  g_dump->Write("FX", "/INFORMATION/COLOR_SENSOR",
+                &fx, H5T_NATIVE_FLOAT);
+  g_dump->Write("FY", "/INFORMATION/COLOR_SENSOR",
+                &fy, H5T_NATIVE_FLOAT);
+
   // Initialize Buffers
-  g_depth = new Depth[width * height];
-  g_colorized_depth = new Color[width * height];
+  g_depth = new Depth[g_camera->width(DEPTH_SENSOR) *
+                      g_camera->height(DEPTH_SENSOR)];
+  g_colorized_depth = new Color[g_camera->width(DEPTH_SENSOR) *
+                                g_camera->height(DEPTH_SENSOR)];
+  g_color = new Color[g_camera->width(COLOR_SENSOR) *
+                      g_camera->height(COLOR_SENSOR)];
 
   // Initialize OpenGL
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
   glutInitWindowSize(kWindowWidth, kWindowHeight);
   glutInitWindowPosition(100, 100);
-  glutCreateWindow("Depth Capture");
+  glutCreateWindow("Camera Capture");
 
   glutDisplayFunc(display);
   glutReshapeFunc(reshape);
@@ -217,7 +285,11 @@ int main(int argc, char **argv) {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height,
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
+               g_camera->width(COLOR_SENSOR) > g_camera->width(DEPTH_SENSOR) ?
+               g_camera->width(COLOR_SENSOR) : g_camera->width(DEPTH_SENSOR),
+               g_camera->height(COLOR_SENSOR) > g_camera->height(DEPTH_SENSOR) ?
+               g_camera->height(COLOR_SENSOR) : g_camera->height(DEPTH_SENSOR),
                0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 
   glDisable(GL_TEXTURE_2D);

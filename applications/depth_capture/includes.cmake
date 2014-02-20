@@ -1,5 +1,0 @@
-set(INCLUDE_DIRS
-    ${INCLUDE_DIRS}
-    ${GLUT_INCLUDE_DIR}
-    ${OPENGL_INCLUDE_DIR}
-    )
