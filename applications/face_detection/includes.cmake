@@ -1,4 +1,6 @@
 set(INCLUDE_DIRS
     ${INCLUDE_DIRS}
+    ${GLUT_INCLUDE_DIR}
     ${OpenCV_INCLUDE_DIRS}
+    ${OPENGL_INCLUDE_DIR}
     )

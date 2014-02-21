@@ -19,10 +19,18 @@ find_package(Eigen REQUIRED)
 find_package(GLUT REQUIRED)
 # HDF5
 find_package(HDF5 REQUIRED)
+# OpenCV
+find_package(OpenCV REQUIRED)
 # OpenGL
 find_package(OpenGL REQUIRED)
 # OpenNI
 find_package(OpenNI2 REQUIRED)
+# OpenMP
+find_package(OpenMP)
+if (OPENMP_FOUND)
+  set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+endif()
 
 set(MODULE_NAMES
     cameras

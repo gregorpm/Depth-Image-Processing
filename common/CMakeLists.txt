@@ -22,6 +22,7 @@ set(INCLUDE_DIRS
 include_directories(${INCLUDE_DIRS})
 
 set(INCS
+    include/dip/${MODULE_NAME}/distance.h
     include/dip/${MODULE_NAME}/error.h
     include/dip/${MODULE_NAME}/integralimage.h
     include/dip/${MODULE_NAME}/macros.h
@@ -31,6 +32,7 @@ set(INCS
     )
 
 set(SRCS
+    src/distance.cpp
     src/error.cu
     src/integralimage.cpp
     src/memory.cu

@@ -16,5 +16,6 @@ DIP can be compiled and installed using CMake.
 * CUDA 5.0
 * Eigen 3.0.0
 * HDF5
+* OpenCV
 * OpenNI2
 * OpenGL/GLUT

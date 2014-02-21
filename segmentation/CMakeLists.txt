@@ -24,15 +24,18 @@ include_directories(${INCLUDE_DIRS})
 
 set(INCS
     include/dip/${MODULE_NAME}/connectedcomponents.h
+    include/dip/${MODULE_NAME}/facemasker.h
     include/dip/${MODULE_NAME}/headsegmenter.h
     )
 
 set(SRCS
     src/connectedcomponents.cpp
+    src/facemasker.cpp
     src/headsegmenter.cpp
     )
 
 set(LIBS
+    ${OpenCV_LIBRARIES}
     ${MODULE_DEPENDENCIES}
     )
 
