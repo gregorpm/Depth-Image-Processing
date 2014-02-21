@@ -1,6 +1,6 @@
 /*
-Copyright (c) 2013, Gregory P. Meyer
-                    University of Illinois Board of Trustees
+Copyright (c) 2013-2014, Gregory P. Meyer
+                         University of Illinois Board of Trustees
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -32,8 +32,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // structure and a union-find algorithm to efficiently determine connected
 // components.
 
-#ifndef DIP_COMMON_CONNECTEDCOMPONENTS_H
-#define DIP_COMMON_CONNECTEDCOMPONENTS_H
+#ifndef DIP_SEGMENTATION_CONNECTEDCOMPONENTS_H
+#define DIP_SEGMENTATION_CONNECTEDCOMPONENTS_H
 
 #include <vector>
 
@@ -97,4 +97,4 @@ private:
 
 } // namespace dip
 
-#endif // DIP_COMMON_CONNECTEDCOMPONENTS_H
+#endif // DIP_SEGMENTATION_CONNECTEDCOMPONENTS_H

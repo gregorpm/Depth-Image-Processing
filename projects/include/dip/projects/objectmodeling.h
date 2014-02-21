@@ -1,6 +1,6 @@
 /*
-Copyright (c) 2013, Gregory P. Meyer
-                    University of Illinois Board of Trustees
+Copyright (c) 2013-2014, Gregory P. Meyer
+                         University of Illinois Board of Trustees
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -58,8 +58,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // After constructing the volumetric model, a mesh is generated using marching
 // cubes.
 
-#ifndef DIP_PROJECTS_OBJECT_MODELING_H
-#define DIP_PROJECTS_OBJECT_MODELING_H
+#ifndef DIP_PROJECTS_OBJECTMODELING_H
+#define DIP_PROJECTS_OBJECTMODELING_H
 
 #include <Eigen/Dense>
 
@@ -238,4 +238,4 @@ private:
 
 } // namespace dip
 
-#endif // DIP_PROJECTS_OBJECT_MODELING_H
+#endif // DIP_PROJECTS_OBJECTMODELING_H

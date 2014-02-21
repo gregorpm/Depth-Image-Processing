@@ -1,6 +1,6 @@
 /*
-Copyright (c) 2013, Gregory P. Meyer
-                    University of Illinois Board of Trustees
+Copyright (c) 2013-2014, Gregory P. Meyer
+                         University of Illinois Board of Trustees
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
