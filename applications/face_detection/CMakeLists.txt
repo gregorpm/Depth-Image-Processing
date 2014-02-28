@@ -44,7 +44,7 @@ target_link_libraries(${APPICATION_NAME} ${LIBS})
 install(TARGETS ${APPICATION_NAME} DESTINATION ${BIN_INSTALL_DIR})
 
 include(../copy_file.cmake)
-copy_file("${PROJECT_SOURCE_DIR}/data/haarcascade_frontalface_default.xml")
+copy_file("haarcascade_frontalface_default.xml" "${PROJECT_SOURCE_DIR}/data")
 
 if(WIN32)
   include(install.cmake)
