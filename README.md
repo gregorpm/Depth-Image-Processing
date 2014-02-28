@@ -8,6 +8,8 @@ in DIP:
 
 * [Real-time 3D face modeling with a commodity depth camera]
 (http://www.ifp.illinois.edu/~gmeyer3/papers/icme2013.pdf)
+* [Accelerating Face Detection with RGB-D Images]
+(http://www.ifp.illinois.edu/~gmeyer3/papers/icip2014.pdf)
 
 DIP can be compiled and installed using CMake.
 
