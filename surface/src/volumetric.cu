@@ -96,7 +96,26 @@ __global__ void Integration(int volume_size, float volume_dimension,
           if (depth_value > 0) {
             float sdf, tsdf;
 
+#ifdef DISTANCE_OPTICAL_AXIS
+            // Distance to surface along optical axis.
             sdf = depth_value - camera.z;
+#else
+            // Distance to surface along camera ray.
+            float voxel_distance = sqrt(camera.x * camera.x +
+                                        camera.y * camera.y +
+                                        camera.z * camera.z);
+
+            Vector ray;
+            ray.x = (u - cx) / fx;
+            ray.y = (v - cy) / fy;
+            ray.z = 1.0f;
+
+            float surface_distance = depth_value * sqrt(ray.x * ray.x +
+                                                        ray.y * ray.y +
+                                                        ray.z * ray.z);
+
+            sdf = surface_distance - voxel_distance;
+#endif
 
             if (sdf >= -max_truncation) {
               if (sdf > 0)
@@ -104,53 +123,29 @@ __global__ void Integration(int volume_size, float volume_dimension,
               else
                 tsdf = MAX(-1.0f, sdf / max_truncation);
 
-              // Determine Camera Ray
-              Vector ray;
-              ray.x = (x - cx) / fx;
-              ray.y = (y - cy) / fy;
-              ray.z = 1.0f;
+              // Cosine angle between view direction and the surface normal.
+              float cosine_angle = normals.z[j];
 
-              // Normalize Ray
-              float inorm = rsqrt(ray.x * ray.x + ray.y * ray.y +
-                                  ray.z * ray.z);
+              // Compute Weight
+              float weight = (exp(cosine_angle - 1.0f) *
+                              exp(-0.0001f * depth_value)) / max_weight;
 
-              ray.x *= inorm;
-              ray.y *= inorm;
-              ray.z *= inorm;
+              // Update Voxel
+              Voxel voxel = volume[i];
 
-              // Compute cosine angle between camera ray and surface normal.
-              Vector normal;
+              float f = UNCOMPRESS_VALUE(voxel);
+              float w = UNCOMPRESS_WEIGHT(voxel);
 
-              normal.x = normals.x[j];
-              normal.y = normals.y[j];
-              normal.z = normals.z[j];
-
-              if (normal.x != 0.0f || normal.y != 0.0f || normal.z != 0.0f) {
-                float cosine_angle = ray.x * normal.x + ray.y * normal.y +
-                                     ray.z * normal.z;
-
-                // Compute Weight
-                float weight = (exp(cosine_angle - 1.0f) *
-                                exp(-2.0f * ABS(tsdf)) *
-                                exp(-0.0001f * depth_value)) / max_weight;
-
-                // Update Voxel
-                Voxel voxel = volume[i];
-
-                float f = UNCOMPRESS_VALUE(voxel);
-                float w = UNCOMPRESS_WEIGHT(voxel);
-
-                if(w != 0) {
-                  f = (f * w + tsdf * weight) / (w + weight);
-                  w = MIN(w + weight, 1.0f);
-                }
-                else {
-                  f = tsdf;
-                  w = weight;
-                }
-
-                volume[i] = COMPRESS(f, w);
+              if(w != 0) {
+                f = (f * w + tsdf * weight) / (w + weight);
+                w = MIN(w + weight, 1.0f);
               }
+              else {
+                f = tsdf;
+                w = weight;
+              }
+
+              volume[i] = COMPRESS(f, w);
             }
           }
         }
