@@ -44,7 +44,7 @@ public:
            const Depth *depth, Color *colorized_depth);
 
 private:
-  Color hsl2rgb(float hue, float lightness, float saturation);
+  Color jet(float value, float min, float max);
 
   DISALLOW_COPY_AND_ASSIGN(Colorize);
 };

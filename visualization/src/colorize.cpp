@@ -33,96 +33,45 @@ namespace dip {
 void Colorize::Run(int width, int height, const Depth *depth,
                    Color *colorized_depth) {
   int min_depth, max_depth;
-  bool set = false;
+  min_depth = max_depth = depth[0];
 
-  for (int i = 0; i < (width * height); i++) {
-    if(set) {
-      min_depth = MIN(depth[i], min_depth);
-      max_depth = MAX(depth[i], max_depth);
-    }
-    else {
-      min_depth = depth[i];
-      max_depth = depth[i];
-
-      set = true;
-    }
+  for (int i = 1; i < (width * height); i++) {
+    min_depth = MIN(depth[i], min_depth);
+    max_depth = MAX(depth[i], max_depth);
   }
 
-  for (int i = 0; i < (width * height); i++) {
-    if ((depth[i] > min_depth) && (depth[i] <= max_depth)) {
-      float hue = static_cast<float>(depth[i] - min_depth) / max_depth;
-      hue -= static_cast<int>(hue);
-
-      Color color = hsl2rgb(hue, 0.5f, 1.0f);
-
-      colorized_depth[i].r = color.r;
-      colorized_depth[i].g = color.g;
-      colorized_depth[i].b = color.b;
-    }
-    else {
-      colorized_depth[i].r = 0;
-      colorized_depth[i].g = 0;
-      colorized_depth[i].b = 0;
-    }
-  }
+  for (int i = 0; i < (width * height); i++)
+    colorized_depth[i] = jet(depth[i], min_depth, max_depth);
 }
 
 void Colorize::Run(int width, int height, int min_depth, int max_depth,
                    const Depth *depth, Color *colorized_depth) {
-  for (int i = 0; i < (width * height); i++) {
-    if ((depth[i] > min_depth) && (depth[i] <= max_depth)) {
-      float hue = static_cast<float>(depth[i] - min_depth) / max_depth;
-      hue -= static_cast<int>(hue);
-
-      Color color = hsl2rgb(hue, 0.5f, 1.0f);
-
-      colorized_depth[i].r = color.r;
-      colorized_depth[i].g = color.g;
-      colorized_depth[i].b = color.b;
-    }
-    else {
-      colorized_depth[i].r = 0;
-      colorized_depth[i].g = 0;
-      colorized_depth[i].b = 0;
-    }
-  }
+  for (int i = 0; i < (width * height); i++)
+    colorized_depth[i] = jet(depth[i], min_depth, max_depth);
 }
 
-Color Colorize::hsl2rgb(float hue, float lightness, float saturation) {
-  float rgb[3] = { 0.0f, 0.0f, 0.0f };
-  float clr[3] = { hue + 1.0f / 3.0f, hue, hue - 1.0f / 3.0f };
-  float x, y;
+Color Colorize::jet(float value, float min, float max) {
+  Color color = { 0, 0, 0 };
 
-  if (lightness <= 0.5f)
-    x = lightness * (1.0f + saturation);
-  else
-    x = lightness + saturation - (lightness * saturation);
+ if ((value >= min) && (value <= max)) {
+    float v = (value - min) / (max - min);
 
-  y = 2.0f * lightness - x;
-
-  for (int i = 0; i < 3; i++) {
-    if (clr[i] < 0.0f)
-      clr[i] += 1.0f;
-    if (clr[i] > 1.0f)
-      clr[i] -= 1.0f;
-
-    if (6.0f * clr[i] < 1.0f)
-      rgb[i] = y + (x - y) * clr[i] * 6.0f;
-    else if (2.0f * clr[i] < 1.0f)
-      rgb[i] = x;
-    else if (3.0f * clr[i] < 2.0f)
-      rgb[i] = (y + (x - y) * ((2.0f / 3.0f) - clr[i]) * 6.0f);
-    else
-      rgb[i] = y;
+    if (v < 0.25f) {
+      color.b = 255;
+      color.g = (unsigned char)((4.0f * v) * 255.0f);
+    } else if (v < 0.5f) {
+      color.g = 255;
+      color.b = (unsigned char)((1.0f + (4.0f * (0.25f - v))) * 255.0f);
+    } else if (v < 0.75f) {
+      color.g = 255;
+      color.r = (unsigned char)((4.0f * (v - 0.5f)) * 255.0f);
+    } else {
+      color.r = 255;
+      color.g = (unsigned char)((1.0f + (4.0f * (0.75f - v))) * 255.0f);
+    }
   }
 
-  Color output;
-
-  output.r = (unsigned char)(rgb[0] * 255.0f);
-  output.g = (unsigned char)(rgb[1] * 255.0f);
-  output.b = (unsigned char)(rgb[2] * 255.0f);
-
-  return output;
+  return color;
 }
 
 } // namespace dip
