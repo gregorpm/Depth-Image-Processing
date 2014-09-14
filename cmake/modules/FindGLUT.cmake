@@ -76,10 +76,22 @@ if (GLUT_FOUND)
   # If not, we need some way to figure out what platform we are on.
   set( GLUT_LIBRARIES
     ${GLUT_glut_LIBRARY}
-    ${GLUT_Xmu_LIBRARY}
-    ${GLUT_Xi_LIBRARY}
     ${GLUT_cocoa_LIBRARY}
     )
+
+  if (GLUT_Xmu_LIBRARY)
+    set( GLUT_LIBRARIES
+      ${GLUT_LIBRARIES}
+      ${GLUT_Xmu_LIBRARY}
+      )
+  endif()
+
+  if (GLUT_Xi_LIBRARY)
+    set( GLUT_LIBRARIES
+      ${GLUT_LIBRARIES}
+      ${GLUT_Xi_LIBRARY}
+      )
+  endif()
 
   #The following deprecated settings are for backwards compatibility with CMake1.4
   set (GLUT_LIBRARY ${GLUT_LIBRARIES})

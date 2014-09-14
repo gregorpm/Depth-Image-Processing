@@ -7,6 +7,10 @@ set(BIN_INSTALL_DIR "bin")
 set(LIB_INSTALL_DIR "lib")
 set(INCLUDE_INSTALL_DIR "include/${PROJECT_NAME}")
 
+if(WIN32)
+  set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE OFF)
+endif()
+
 if(UNIX)
   set(BUILD_SHARED_LIBS true)
 endif()
