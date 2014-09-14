@@ -28,14 +28,62 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <dip/filters/variance.h>
 
+#include <math.h>
+
+#include <dip/common/memory.h>
+#include <dip/common/reduction.h>
+
 namespace dip {
 
-extern void VarianceKernel(float max_variance, int width, int height,
-                           const Depth *depth, Depth *filtered_depth);
+extern void VarianceKernel(int width, int height, const Depth *depth,
+                           float *variance, float *std, float *valid);
+extern void ThresholdKernel(float threshold, int width, int height,
+                            const float *std, const Depth *depth,
+                            Depth *filtered_depth);
 
-void Variance::Run(float max_variance, int width, int height,
-                   const Depth *depth, Depth *filtered_depth) {
-  VarianceKernel(max_variance, width, height, depth, filtered_depth);
+Variance::Variance() : bytes_(0) {
+  variance_ = NULL;
+  std_ = NULL;
+  valid_ = NULL;
+}
+
+Variance::~Variance() {
+  if (variance_!= NULL)
+    Deallocate((void*)variance_);
+  if (std_!= NULL)
+    Deallocate((void*)std_);
+  if (valid_!= NULL)
+    Deallocate((void*)valid_);
+}
+
+void Variance::Run(int width, int height, const Depth *depth,
+                   Depth *filtered_depth) {
+  int required_bytes = sizeof(float) * width * height;
+
+  if (bytes_ < required_bytes) {
+    bytes_ = required_bytes;
+
+    if (variance_!= NULL)
+      Deallocate((void*)variance_);
+    if (std_!= NULL)
+      Deallocate((void*)std_);
+    if (valid_!= NULL)
+      Deallocate((void*)valid_);
+
+    Allocate((void**)&variance_, bytes_);
+    Allocate((void**)&std_, bytes_);
+    Allocate((void**)&valid_, bytes_);
+  }
+
+  VarianceKernel(width, height, depth, variance_, std_, valid_);
+
+  float valid = Reduce(width * height, valid_);
+  float mean_variance = Reduce(width * height, variance_) / valid;
+  float mean_std = Reduce(width * height, std_) / valid;
+  float std_std = sqrt(mean_variance - (mean_std * mean_std));
+
+  ThresholdKernel(mean_std + 2.0f * std_std, width, height, std_,
+                  depth, filtered_depth);
 }
 
 } // namespace dip

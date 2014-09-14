@@ -27,14 +27,17 @@ set(INCS
     include/dip/${MODULE_NAME}/camera.h
     include/dip/${MODULE_NAME}/dumpfile.h
     include/dip/${MODULE_NAME}/primesense.h
+    include/dip/${MODULE_NAME}/softkinetic.h
     )
 
 set(SRCS
     src/dumpfile.cpp
     src/primesense.cpp
+    src/softkinetic.cpp
     )
 
 set(LIBS
+    ${DEPTHSENSE_LIBRARIES}
     ${OPENNI2_LIBRARIES}
     ${MODULE_DEPENDENCIES}
     )

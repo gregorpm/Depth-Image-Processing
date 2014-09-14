@@ -34,9 +34,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <GL/glut.h>
 
 // DIP
-#include <dip/cameras/camera.h>
 #include <dip/cameras/dumpfile.h>
 #include <dip/cameras/primesense.h>
+#include <dip/cameras/softkinetic.h>
 #include <dip/common/types.h>
 #include <dip/visualization/colorize.h>
 
@@ -173,10 +173,15 @@ int main(int argc, char **argv) {
   glutInit(&argc, argv);
 
   // Initialize Camera
-  if (argc < 2)
+  if (argc < 2) {
+#ifndef SOFTKINETIC
     g_camera = new PrimeSense();
-  else
+#else
+    g_camera = new SoftKinetic();
+#endif
+  } else {
     g_camera = new DumpFile(argv[1]);
+  }
 
   if (!g_camera->enabled()) {
     printf("Unable to Open Camera\n");

@@ -168,7 +168,7 @@ int HeadSegmenter::Run(int min_depth, int max_depth, int max_difference,
     }
   }
 
-  head_bottom -= (int)((head_bottom - head_top) * 0.20f);
+  head_bottom -= (int)((head_bottom - head_top) * 0.10f);
 
   // Locate Left and Right side of Head
   int head_left = width;
@@ -187,7 +187,7 @@ int HeadSegmenter::Run(int min_depth, int max_depth, int max_difference,
     }
   }
 
-  // Check Head Dimensions
+  // Check head dimensions.
   float head_width = ((head_right - head_left) * foreground_depth) / fx;
   float head_height = ((head_bottom - head_top) * foreground_depth) / fy;
 

@@ -43,6 +43,7 @@ FaceModeling::FaceModeling(int width, int height, float fx, float fy,
 
   // Allocate depth images on the GPU.
   Allocate((void**)&segmented_depth_, sizeof(Depth) * width_ * height_);
+  Allocate((void**)&filtered_depth_, sizeof(Depth) * width_ * height_);
   Allocate((void**)&denoised_depth_, sizeof(Depth) * width_ * height_);
 
   // Allocate model point-cloud on the GPU.
@@ -80,6 +81,7 @@ FaceModeling::~FaceModeling() {
   delete [] depth_;
 
   Deallocate((void*)(segmented_depth_));
+  Deallocate((void*)(filtered_depth_));
   Deallocate((void*)(denoised_depth_));
 
   Deallocate((void*)vertices_.x);
@@ -117,8 +119,10 @@ void FaceModeling::Run(const Depth *depth, Color *normal_map) {
   Upload(segmented_depth_, depth_, sizeof(Depth) * width_ * height_);
 
   // Filter the depth image.
-  bilateral_filter_.Run(kBilateralFilterSigmaD, kBilateralFilterSigmaR,
-                        width_, height_, segmented_depth_, denoised_depth_);
+  variance_filter_.Run(width_, height_, segmented_depth_, filtered_depth_);
+  bilateral_filter_.Run(kRegistrationBilateralFilterSigmaD,
+                        kRegistrationBilateralFilterSigmaR,
+                        width_, height_, filtered_depth_, denoised_depth_);
 
   // Construct the point-cloud by back-projecting the depth image.
   back_projection_.Run(width_, height_, fx_, fy_, cx_, cy_,
@@ -164,10 +168,14 @@ void FaceModeling::Run(const Depth *depth, Color *normal_map) {
   }
 
   // Integrate the segmented depth image into the volumetric model.
+  bilateral_filter_.Run(kIntegrationBilateralFilterSigmaD,
+                        kIntegrationBilateralFilterSigmaR,
+                        width_, height_, filtered_depth_, denoised_depth_);
+
   volumetric_.Run(kVolumeSize, kVolumeDimension, kVoxelDimension,
                   kMaxTruncation, kMaxWeight, width_,  height_,
                   fx_, fy_, cx_, cy_, volume_center_, transformation_.inverse(),
-                  segmented_depth_, normals_, volume_);
+                  denoised_depth_, normals_, volume_);
 
   // Render the volume using ray casting. Update the model point-cloud
   // for the next frame's registration step. Generate the normal map of

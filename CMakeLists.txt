@@ -7,17 +7,25 @@ set(BIN_INSTALL_DIR "bin")
 set(LIB_INSTALL_DIR "lib")
 set(INCLUDE_INSTALL_DIR "include/${PROJECT_NAME}")
 
+#add_definitions(-DSOFTKINETIC)
+
 if(WIN32)
   set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE OFF)
 endif()
 
 if(UNIX)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
   set(BUILD_SHARED_LIBS true)
 endif()
 
 # CUDA
 find_package(CUDA REQUIRED)
 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -arch=sm_20")
+if(UNIX)
+  set(CUDA_PROPAGATE_HOST_FLAGS false)
+endif()
+# DepthSense
+find_package(DepthSense REQUIRED)
 # Eigen
 find_package(Eigen REQUIRED)
 # GLUT

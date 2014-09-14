@@ -35,6 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // DIP
 #include <dip/cameras/primesense.h>
+#include <dip/cameras/softkinetic.h>
 #include <dip/common/types.h>
 #include <dip/io/hdf5wrapper.h>
 #include <dip/visualization/colorize.h>
@@ -49,7 +50,7 @@ const int kFramesPerSecond = 60;
 const int kMinDepth = 64;
 const int kMaxDepth = 8192;
 
-PrimeSense *g_camera = NULL;
+Camera *g_camera = NULL;
 HDF5Wrapper *g_dump = NULL;
 
 Depth *g_depth = NULL;
@@ -203,8 +204,12 @@ int main(int argc, char **argv) {
 
   glutInit(&argc, argv);
 
-  // Initialize PrimeSense camera.
+  // Initialize camera.
+#ifndef SOFTKINETIC
   g_camera = new PrimeSense();
+#else
+  g_camera = new SoftKinetic();
+#endif
 
   if (!g_camera->enabled()) {
     printf("Unable to Open Camera\n");

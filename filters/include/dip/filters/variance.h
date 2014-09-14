@@ -36,13 +36,15 @@ namespace dip {
 
 class Variance {
 public:
-  Variance() {}
-  ~Variance() {}
+  Variance();
+  ~Variance();
 
-  void Run(float max_variance, int width, int height,
-           const Depth *depth, Depth *filtered_depth);
+  void Run(int width, int height, const Depth *depth, Depth *filtered_depth);
 
 private:
+  float *variance_, *std_, *valid_;
+  int bytes_;
+
   DISALLOW_COPY_AND_ASSIGN(Variance);
 };
 

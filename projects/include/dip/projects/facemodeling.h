@@ -67,6 +67,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <dip/common/macros.h>
 #include <dip/common/memory.h>
 #include <dip/common/types.h>
+#include <dip/filters/variance.h>
 #include <dip/filters/bilateral.h>
 #include <dip/registration/icp.h>
 #include <dip/sampling/downsample.h>
@@ -107,8 +108,17 @@ const int kMaxHeadHeight = 300;
 // (controlled by kBilateralFilterSigmaR). If kBilateralFilterSigmaD is small
 // then distance pixels will have a larger weight. If kBilateralFilterSigmaR is
 // small pixels with different depth values will have a larger weight.
-const float kBilateralFilterSigmaD = 1.0f / (1.0f * 1.0f);
-const float kBilateralFilterSigmaR = 1.0f / (50.0f * 50.0f);
+#ifndef SOFTKINETIC
+const float kRegistrationBilateralFilterSigmaD = 1.0f / (1.0f * 1.0f);
+const float kRegistrationBilateralFilterSigmaR = 1.0f / (50.0f * 50.0f);
+const float kIntegrationBilateralFilterSigmaD = 1.0f / (1.0f * 1.0f);
+const float kIntegrationBilateralFilterSigmaR = 1.0f / (50.0f * 50.0f);
+#else
+const float kRegistrationBilateralFilterSigmaD = 1.0f / (3.0f * 3.0f);
+const float kRegistrationBilateralFilterSigmaR = 1.0f / (150.0f * 150.0f);
+const float kIntegrationBilateralFilterSigmaD = 1.0f / (2.0f * 2.0f);
+const float kIntegrationBilateralFilterSigmaR = 1.0f / (100.0f * 100.0f);
+#endif
 
 // ICP is controlled using the following parameters. kICPIterations determines
 // the maximum number of iterations of ICP. In order to fail gracefully,
@@ -146,10 +156,16 @@ const float kNormalThreshold = 0.61f;
 // is updated with changes in the surface. A small value for kMaxWeight will
 // enable the volume to be updated quickly when the scene is modified, but also,
 // can quickly add errors to the reconstructed surface.
+#ifndef SOFTKINETIC
 const int kVolumeSize = 256;
 const float kVolumeDimension = 386.0f;
-const float kVoxelDimension = kVolumeDimension / kVolumeSize;
 const float kMaxTruncation = 5.0f;
+#else
+const int kVolumeSize = 128;
+const float kVolumeDimension = 256.0f;
+const float kMaxTruncation = 16.0f;
+#endif
+const float kVoxelDimension = kVolumeDimension / kVolumeSize;
 const float kMaxWeight = 256.0f;
 
 // The following parameters control the ray caster. The maximum distance a ray
@@ -179,9 +195,11 @@ public:
   //         vertices, faces, and edges to data structure.
   void Model(Mesh *mesh);
 
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 private:
   // Modules used to construct the 3D face model.
   HeadSegmenter head_segmentation_;
+  Variance variance_filter_;
   Bilateral bilateral_filter_;
   BackProjection back_projection_;
   Centroid centroid_;
@@ -194,6 +212,7 @@ private:
   // These buffers are allocated on the GPU.
   Depth *depth_;
   Depth *segmented_depth_;
+  Depth *filtered_depth_;
   Depth *denoised_depth_;
 
   // Point-clouds corresponding to the current depth image.

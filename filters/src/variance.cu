@@ -34,8 +34,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace dip {
 
-__global__ void VarianceFilter(float max_variance, int width, int height,
-                               const Depth *depth, Depth *filtered_depth) {
+__global__ void Variance(int width, int height, const Depth *depth,
+                         float *variance, float *std, float *valid) {
   // Allocate Shared Memory
   __shared__ Depth ds[BLOCK_WIDTH][BLOCK_WIDTH];
 
@@ -50,8 +50,7 @@ __global__ void VarianceFilter(float max_variance, int width, int height,
   // Cooperative Load of the Tile
   if ((col < width) && (row < height)) {
     ds[ty][tx] = depth[col + row * width];
-  }
-  else {
+  } else {
     ds[ty][tx] = 0;
   }
 
@@ -78,26 +77,61 @@ __global__ void VarianceFilter(float max_variance, int width, int height,
           else
             depth_value = depth[x + y * width];
 
-          sum += depth_value;
-          squared_sum += depth_value * depth_value;
-          count++;
+          if (depth_value > 0) {
+            sum += depth_value;
+            squared_sum += depth_value * depth_value;
+            count++;
+          }
         }
       }
     }
 
-    float mean = sum / count;
-    float squared_mean = squared_sum / count;
-    float variance = squared_mean - (mean * mean);
+    if ((ds[ty][tx] > 0) && (count > 0)) {
+      float mean = sum / count;
+      float squared_mean = squared_sum / count;
+      float var = squared_mean - (mean * mean);
 
-    if(variance < max_variance)
-      filtered_depth[col + row * width] = ds[ty][tx];
-    else
-      filtered_depth[col + row * width] = 0;
+      if (var > 0.0f) {
+        variance[col + row * width] = var;
+        std[col + row * width] = sqrt(var);
+        valid[col + row * width] = 1.0f;
+      } else {
+        variance[col + row * width] = 0.0f;
+        std[col + row * width] = 0.0f;
+        valid[col + row * width] = 0.0f;
+      }
+    } else {
+      variance[col + row * width] = 0.0f;
+      std[col + row * width] = 0.0f;
+      valid[col + row * width] = 0.0f;
+    }
   }
 }
 
-void VarianceKernel(float max_variance, int width, int height,
-                    const Depth *depth, Depth *filtered_depth) {
+__global__ void Threshold(float threshold, int width, int height,
+                          const float *std, const Depth *depth,
+                          Depth *filtered_depth) {
+  // Get Block and Thread Id
+  int bx = blockIdx.x;  int by = blockIdx.y;
+  int tx = threadIdx.x; int ty = threadIdx.y;
+
+  // Calculate Row & Column
+  int col = tx + bx * BLOCK_WIDTH;
+  int row = ty + by * BLOCK_WIDTH;
+
+  // Perform Threshold
+  if ((col < width) && (row < height)) {
+    int i = col + row * width;
+
+    if (std[i] < threshold)
+      filtered_depth[i] = depth[i];
+    else
+      filtered_depth[i] = 0;
+  }
+}
+
+void VarianceKernel(int width, int height, const Depth *depth,
+                    float *variance, float *std, float *valid) {
   // Launch Variance Filter Kernel
   int grid_width = (width + (BLOCK_WIDTH - 1)) / BLOCK_WIDTH;
   int grid_height = (height + (BLOCK_WIDTH - 1)) / BLOCK_WIDTH;
@@ -105,8 +139,23 @@ void VarianceKernel(float max_variance, int width, int height,
   dim3 grid_dim(grid_width, grid_height, 1);
   dim3 block_dim(BLOCK_WIDTH, BLOCK_WIDTH, 1);
 
-  VarianceFilter<<<grid_dim, block_dim>>>(max_variance, width, height, depth,
-                                          filtered_depth);
+  Variance<<<grid_dim, block_dim>>>(width, height, depth, variance, std, valid);
+
+  CUDA_ERROR_CHECK(cudaDeviceSynchronize());
+}
+
+void ThresholdKernel(float threshold, int width, int height,
+                     const float *std, const Depth *depth,
+                     Depth *filtered_depth) {
+  // Launch Variance Filter Kernel
+  int grid_width = (width + (BLOCK_WIDTH - 1)) / BLOCK_WIDTH;
+  int grid_height = (height + (BLOCK_WIDTH - 1)) / BLOCK_WIDTH;
+
+  dim3 grid_dim(grid_width, grid_height, 1);
+  dim3 block_dim(BLOCK_WIDTH, BLOCK_WIDTH, 1);
+
+  Threshold<<<grid_dim, block_dim>>>(threshold, width, height, std,
+                                     depth, filtered_depth);
 
   CUDA_ERROR_CHECK(cudaDeviceSynchronize());
 }
