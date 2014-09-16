@@ -43,11 +43,11 @@ public:
   ~RayCasting() {}
 
   void Run(float max_distance, float max_truncation, int volume_size,
-           float volume_dimension, float voxel_dimension, int width, int height,
-           float fx, float fy, float cx, float cy, Vertex center,
-           const Eigen::Matrix4f &transformation, const Voxel *volume,
-           Vertices model_vertices, Normals model_normals,
-           Color *normal_map = NULL);
+           float volume_dimension, float voxel_dimension, float min_weight,
+           int width, int height, float fx, float fy, float cx, float cy,
+           Vertex center, const Eigen::Matrix4f &transformation,
+           const Voxel *volume, Vertices model_vertices,
+           Normals model_normals, Color *normal_map = NULL);
 
 private:
   DISALLOW_COPY_AND_ASSIGN(RayCasting);

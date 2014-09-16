@@ -171,6 +171,8 @@ const float kMaxWeight = 256.0f;
 // The following parameters control the ray caster. The maximum distance a ray
 // will travel is defined by kMaxDistance.
 const float kMaxDistance = 1024.0f;
+const float kMinWeightPerFrame = 0.25f;
+const float kMaxMinWeight = 8.0f;
 
 class FaceModeling {
 public:
@@ -246,6 +248,10 @@ private:
 
   // The rigid body transformation computed by the registration step.
   Eigen::Matrix4f transformation_;
+
+  // Minimum voxel weight used by ray caster and marching cubes to
+  // determine which voxels are accurate.
+  float min_weight_;
 
   // The dimensions of the depth image.
   int width_, height_;

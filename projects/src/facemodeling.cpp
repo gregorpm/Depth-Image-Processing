@@ -35,7 +35,8 @@ using namespace Eigen;
 namespace dip {
 
 FaceModeling::FaceModeling(int width, int height, float fx, float fy,
-                           float cx, float cy) : width_(width), height_(height),
+                           float cx, float cy) :
+                           min_weight_(0.0f), width_(width), height_(height),
                            fx_(fx), fy_(fy), cx_(cx), cy_(cy),
                            initial_frame_(true) {
   // Allocate depth image on the CPU.
@@ -177,13 +178,16 @@ void FaceModeling::Run(const Depth *depth, Color *normal_map) {
                   fx_, fy_, cx_, cy_, volume_center_, transformation_.inverse(),
                   denoised_depth_, normals_, volume_);
 
+  min_weight_ = MIN(min_weight_ + kMinWeightPerFrame / kMaxWeight,
+                    kMaxMinWeight / kMaxWeight);
+
   // Render the volume using ray casting. Update the model point-cloud
   // for the next frame's registration step. Generate the normal map of
   // the model to display the current state of the model to the user.
   ray_casting_.Run(kMaxDistance, kMaxTruncation, kVolumeSize, kVolumeDimension,
-                   kVoxelDimension, width_, height_, fx_, fy_, cx_, cy_,
-                   volume_center_, transformation_, volume_, model_vertices_,
-                   model_normals_, normal_map_);
+                   kVoxelDimension, min_weight_, width_, height_,
+                   fx_, fy_, cx_, cy_, volume_center_, transformation_,
+                   volume_, model_vertices_, model_normals_, normal_map_);
 
   // Download the normal map from the GPU to the CPU.
   Download(normal_map, normal_map_, sizeof(Color) * width_ * height_);
@@ -204,7 +208,7 @@ void FaceModeling::Model(Mesh *mesh) {
 
   // Construct mesh using marching cubes.
   marching_cubes_.Run(kVolumeSize, kVolumeDimension, kVoxelDimension,
-                      volume_center_, volume, mesh);
+                      min_weight_, volume_center_, volume, mesh);
 
   delete [] volume;
 }

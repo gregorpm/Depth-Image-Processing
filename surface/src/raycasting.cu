@@ -38,9 +38,9 @@ namespace dip {
 __constant__ float T[4][4];
 
 __device__ bool interpolate(int volume_size, float volume_dimension,
-                            float voxel_dimension, const Voxel *volume,
-                            Vertex center, float vx, float vy, float vz,
-                            float &tsdf) {
+                            float voxel_dimension, float min_weight,
+                            const Voxel *volume, Vertex center,
+                            float vx, float vy, float vz, float &tsdf) {
   // Convert Vertex Position to Grid Position
   float gx, gy, gz;
   gx = (vx + (volume_dimension / 2.0f) - center.x) / voxel_dimension;
@@ -149,8 +149,10 @@ __device__ bool interpolate(int volume_size, float volume_dimension,
     w111 = 0.0f;
   }
 
-  if((w000 == 0.0f) || (w001 == 0.0f) || (w010 == 0.0f) || (w011 == 0.0f) ||
-     (w100 == 0.0f) || (w101 == 0.0f) || (w110 == 0.0f) || (w111 == 0.0f)) {
+  if((w000 <= min_weight) || (w001 <= min_weight) ||
+     (w010 <= min_weight) || (w011 <= min_weight) ||
+     (w100 <= min_weight) || (w101 <= min_weight) ||
+     (w110 <= min_weight) || (w111 <= min_weight)) {
     return false;
   }
 
@@ -172,7 +174,7 @@ __device__ bool interpolate(int volume_size, float volume_dimension,
 }
 
 __device__ bool surface_normal(int volume_size, float volume_dimension,
-                               float voxel_dimension,
+                               float voxel_dimension, float min_weight,
                                const Voxel *volume, Vertex center,
                                float vx, float vy, float vz,
                                float &nx, float &ny, float &nz) {
@@ -284,8 +286,10 @@ __device__ bool surface_normal(int volume_size, float volume_dimension,
     w111 = 0.0f;
   }
 
-  if((w000 == 0.0f) || (w001 == 0.0f) || (w010 == 0.0f) || (w011 == 0.0f) ||
-     (w100 == 0.0f) || (w101 == 0.0f) || (w110 == 0.0f) || (w111 == 0.0f)) {
+  if((w000 <= min_weight) || (w001 <= min_weight) ||
+     (w010 <= min_weight) || (w011 <= min_weight) ||
+     (w100 <= min_weight) || (w101 <= min_weight) ||
+     (w110 <= min_weight) || (w111 <= min_weight)) {
     return false;
   }
 
@@ -326,8 +330,9 @@ __device__ bool surface_normal(int volume_size, float volume_dimension,
 
 __global__ void RayCaster(float max_distance, float max_truncation,
                           int volume_size, float volume_dimension,
-                          float voxel_dimension, int width, int height,
-                          float fx, float fy, float cx, float cy, Vertex center,
+                          float voxel_dimension, float min_weight,
+                          int width, int height, float fx, float fy,
+                          float cx, float cy, Vertex center,
                           const Voxel *volume, Vertices model_vertices,
                           Normals model_normals, Color *normal_map) {
   // Get Block and Thread Id
@@ -420,8 +425,9 @@ __global__ void RayCaster(float max_distance, float max_truncation,
       }
 
       if (!interpolate(volume_size, volume_dimension, voxel_dimension,
-                       volume, center, vertex_position.x, vertex_position.y,
-                       vertex_position.z, tsdf)) {
+                       min_weight, volume, center,
+                       vertex_position.x, vertex_position.y, vertex_position.z,
+                       tsdf)) {
         time_last = time;
         time += max_truncation;
         continue;
@@ -442,7 +448,7 @@ __global__ void RayCaster(float max_distance, float max_truncation,
 
         // Determine Normal
         if (surface_normal(volume_size, volume_dimension,
-                           voxel_dimension, volume, center,
+                           voxel_dimension, min_weight, volume, center,
                            model_vertex.x, model_vertex.y, model_vertex.z,
                            model_normal.x, model_normal.y, model_normal.z)) {
           // Normalize
@@ -488,11 +494,12 @@ __global__ void RayCaster(float max_distance, float max_truncation,
 
 void RayCastingKernel(float max_distance, float max_truncation,
                       int volume_size, float volume_dimension,
-                      float voxel_dimension, int width, int height,
-                      float fx, float fy, float cx, float cy,
-                      Vertex center, float *transformation,
-                      const Voxel *volume, Vertices model_vertices,
-                      Normals model_normals, Color *normal_map) {
+                      float voxel_dimension, float min_weight,
+                      int width, int height, float fx, float fy,
+                      float cx, float cy, Vertex center,
+                      float *transformation, const Voxel *volume,
+                      Vertices model_vertices, Normals model_normals,
+                      Color *normal_map) {
   // Copy Transforms to Constant Memory
   CUDA_ERROR_CHECK(cudaMemcpyToSymbol(T, transformation, sizeof(float) * 16));
 
@@ -505,9 +512,9 @@ void RayCastingKernel(float max_distance, float max_truncation,
 
   RayCaster<<<grid_dim, block_dim>>>(max_distance, max_truncation, volume_size,
                                      volume_dimension, voxel_dimension,
-                                     width, height, fx, fy, cx, cy, center,
-                                     volume, model_vertices, model_normals,
-                                     normal_map);
+                                     min_weight, width, height, fx, fy, cx, cy,
+                                     center, volume, model_vertices,
+                                     model_normals, normal_map);
 
   CUDA_ERROR_CHECK(cudaDeviceSynchronize());
 }

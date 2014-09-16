@@ -34,16 +34,17 @@ namespace dip {
 
 extern void RayCastingKernel(float max_distance, float max_truncation,
                              int volume_size, float volume_dimension,
-                             float voxel_dimension, int width, int height,
-                             float fx, float fy, float cx, float cy,
-                             Vertex center, float *transformation,
-                             const Voxel *volume, Vertices model_vertices,
-                             Normals model_normals, Color *normal_map);
+                             float voxel_dimension, float min_weight,
+                             int width, int height, float fx, float fy,
+                             float cx, float cy, Vertex center,
+                             float *transformation, const Voxel *volume,
+                             Vertices model_vertices, Normals model_normals,
+                             Color *normal_map);
 
 void RayCasting::Run(float max_distance, float max_truncation, int volume_size,
                      float volume_dimension, float voxel_dimension,
-                     int width, int height, float fx, float fy,
-                     float cx, float cy, Vertex center,
+                     float min_weight, int width, int height,
+                     float fx, float fy, float cx, float cy, Vertex center,
                      const Matrix4f &transformation, const Voxel *volume,
                      Vertices model_vertices, Normals model_normals,
                      Color *normal_map) {
@@ -55,8 +56,9 @@ void RayCasting::Run(float max_distance, float max_truncation, int volume_size,
   }
 
   RayCastingKernel(max_distance, max_truncation, volume_size, volume_dimension,
-                   voxel_dimension, width, height, fx, fy, cx, cy, center, T,
-                   volume, model_vertices, model_normals, normal_map);
+                   voxel_dimension, min_weight, width, height, fx, fy, cx, cy,
+                   center, T, volume, model_vertices, model_normals,
+                   normal_map);
 }
 
 } // namespace dip

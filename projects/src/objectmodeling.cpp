@@ -191,7 +191,7 @@ void ObjectModeling::Run(const Depth *depth, Color *normal_map) {
   // for the next frame's registration step. Generate the normal map of
   // the model to display the current state of the model to the user.
   ray_casting_.Run(kMaxDistance, kMaxTruncation, kVolumeSize, kVolumeDimension,
-                   kVoxelDimension, width_, height_, fx_, fy_, cx_, cy_,
+                   kVoxelDimension, 0.0f, width_, height_, fx_, fy_, cx_, cy_,
                    volume_center_, transformation_, volume_, model_vertices_,
                    model_normals_, normal_map_);
 
@@ -210,7 +210,7 @@ void ObjectModeling::Model(Mesh *mesh) {
            kVolumeSize * kVolumeSize * kVolumeSize);
 
   // Construct mesh using marching cubes.
-  marching_cubes_.Run(kVolumeSize, kVolumeDimension, kVoxelDimension,
+  marching_cubes_.Run(kVolumeSize, kVolumeDimension, kVoxelDimension, 0.0f,
                       volume_center_, volume, mesh);
 
   delete [] volume;

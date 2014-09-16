@@ -46,12 +46,12 @@ public:
   ~MarchingCubes() {}
 
   void Run(int volume_size, float volume_dimension, float voxel_dimension,
-           Vertex center, const Voxel *volume, Mesh *mesh);
+           float min_weight, Vertex center, const Voxel *volume, Mesh *mesh);
 
 private:
   Vertex Interpolate(const Voxel *volume, Vertex position_1, Vertex position_2,
                      int index_1, int index_2);
-  bool Check(const Voxel *volume, const int *grid);
+  bool Check(float min_weight, const Voxel *volume, const int *grid);
   int Neighbors(int id, int x, int y, int width, Cube *current, Cube *previous);
 
   DISALLOW_COPY_AND_ASSIGN(MarchingCubes);
