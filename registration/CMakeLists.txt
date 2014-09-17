@@ -38,8 +38,15 @@ set(LIBS
 cuda_add_library(${MODULE_NAME} ${SRCS} ${INCS})
 target_link_libraries(${MODULE_NAME} ${LIBS})
 
-install(TARGETS ${MODULE_NAME} DESTINATION ${LIB_INSTALL_DIR}/Release
-        CONFIGURATIONS Release)
-install(TARGETS ${MODULE_NAME} DESTINATION ${LIB_INSTALL_DIR}/Debug
-        CONFIGURATIONS Debug)
+if(WIN32)
+    install(TARGETS ${MODULE_NAME} DESTINATION ${LIB_INSTALL_DIR}/Release
+            CONFIGURATIONS Release)
+    install(TARGETS ${MODULE_NAME} DESTINATION ${LIB_INSTALL_DIR}/Debug
+            CONFIGURATIONS Debug)
+endif()
+
+if(UNIX)
+    install(TARGETS ${MODULE_NAME} DESTINATION ${LIB_INSTALL_DIR})
+endif()
+
 install(FILES ${INCS} DESTINATION ${INCLUDE_INSTALL_DIR}/${MODULE_NAME})

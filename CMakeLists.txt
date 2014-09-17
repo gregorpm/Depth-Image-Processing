@@ -17,6 +17,7 @@ endif()
 
 # CUDA
 find_package(CUDA REQUIRED)
+set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -arch=sm_20")
 # Eigen
 find_package(Eigen REQUIRED)
 # GLUT

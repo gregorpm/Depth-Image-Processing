@@ -28,14 +28,14 @@ set(DIP_MODULES
 foreach(MODULE ${DIP_MODULES})
   find_library(DIP_${MODULE}_LIBRARY_DEBUG
                NAMES ${MODULE}
-               PATHS /usr/local/lib/Debug
+               PATHS /usr/local/lib
                      "$ENV{PROGRAMFILES}/dip/lib/Debug"
                      "$ENV{PROGRAMW6432}/dip/lib/Debug"
                )
 
   find_library(DIP_${MODULE}_LIBRARY_RELEASE
                NAMES ${MODULE}
-               PATHS /usr/local/lib/Release
+               PATHS /usr/local/lib
                      "$ENV{PROGRAMFILES}/dip/lib/Release"
                      "$ENV{PROGRAMW6432}/dip/lib/Release"
                )
