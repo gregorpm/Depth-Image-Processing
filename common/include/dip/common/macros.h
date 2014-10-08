@@ -37,6 +37,10 @@ namespace dip {
 #define ABS(a) (((a) < 0) ? -(a) : (a))
 #endif
 
+#ifndef SGN
+#define SGN(a) (((a) < 0) ? -1 : 1)
+#endif
+
 #ifndef DIFF
 #define DIFF(a, b) (ABS((a) - (b)))
 #endif
