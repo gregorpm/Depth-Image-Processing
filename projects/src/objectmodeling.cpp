@@ -159,10 +159,11 @@ void ObjectModeling::Run(const Depth *depth, Color *normal_map) {
 
     // Perform the coarse-to-fine ICP.
     for (int i = kPyramidLevels - 1; i >= 0; i--) {
-      if (icp_.Run(kICPIterations[i], kMinCorrespondences,
+      if (icp_.Run(kICPIterations[i],
+                   kMinCorrespondences[i + 1], kMinCorrespondences[i],
+                   kDistanceThreshold[i + 1], kDistanceThreshold[i],
+                   kNormalThreshold[i + 1], kNormalThreshold[i],
                    kMaxRotation, kMaxTranslation,
-                   kMinErrorDifference,
-                   kDistanceThreshold, kNormalThreshold,
                    fx_, fy_, cx_, cy_,
                    (width_ >> (i * kDownsampleFactor)),
                    (height_ >> (i * kDownsampleFactor)),

@@ -59,17 +59,18 @@ ICP::~ICP() {
   }
 }
 
-int ICP::Run(int max_iterations, int min_correspondences,
+int ICP::Run(int max_iterations,
+             int min_correspondences_begin, int min_correspondences_end,
+             float distance_threshold_begin, float distance_threshold_end,
+             float normal_threshold_begin, float normal_threshold_end,
              float max_rotation, float max_translation,
-             float min_error_difference,
-             float distance_threshold, float normal_threshold,
              float fx, float fy, float cx, float cy,
              int src_width, int src_height,
              int dst_width, int dst_height,
              Vertices src_vertices, Normals src_normals,
              Vertices dst_vertices, Normals dst_normals,
-             const Matrix4f &previous_transformation,
-             Matrix4f &transformation) {
+             const Eigen::Matrix4f &previous_transformation,
+             Eigen::Matrix4f &transformation) {
   int required_bytes = sizeof(float) * src_width * src_height;
 
   if (bytes_ < required_bytes) {
@@ -87,6 +88,15 @@ int ICP::Run(int max_iterations, int min_correspondences,
 
   float previous_error = -1.0f;
   for (int i = 0; i < max_iterations; i++) {
+    float alpha = (float)i / (float)max_iterations;
+
+    float dthreshold = (1.0f - alpha) * distance_threshold_begin +
+                       alpha * distance_threshold_end;
+    float nthreshold = (1.0f - alpha) * normal_threshold_begin +
+                       alpha * normal_threshold_end;
+    float cthreshold = (1.0f - alpha) * min_correspondences_begin +
+                       alpha * min_correspondences_end;
+
     Matrix4f frame_transformation = previous_inverse_transformation *
                                     transformation;
 
@@ -98,7 +108,7 @@ int ICP::Run(int max_iterations, int min_correspondences,
       }
     }
 
-    ICPKernel(distance_threshold, normal_threshold, fx, fy, cx, cy, Tf, Tg,
+    ICPKernel(dthreshold, nthreshold, fx, fy, cx, cy, Tf, Tg,
               src_width, src_height, dst_width, dst_height,
               src_vertices, src_normals, dst_vertices, dst_normals,
               buffer_);
@@ -129,7 +139,7 @@ int ICP::Run(int max_iterations, int min_correspondences,
 
     count = Reduce(src_width * src_height, buffer_[k++]);
 
-    if (count < min_correspondences)
+    if (count < cthreshold)
       return -1;
 
     // Solve Linear System of Equations
@@ -147,20 +157,20 @@ int ICP::Run(int max_iterations, int min_correspondences,
         return -1;
     }
 
-    // Update Transformation
-    transformation = ConstructTransform(x) * transformation;
-
     // Compute Residual
     float residual = sqrt(((x.transpose() * ata * x) -
                            2.0f * (x.transpose() * atb) + btb)(0));
     float error = residual / count;
 
     if (previous_error != -1.0f) {
-      if (fabs(error - previous_error) < min_error_difference)
+      if (error > previous_error)
         break;
     }
 
     previous_error = error;
+
+    // Update Transformation
+    transformation = ConstructTransform(x) * transformation;
   }
 
   return 0;

@@ -38,7 +38,7 @@ FaceModeling::FaceModeling(int width, int height, float fx, float fy,
                            float cx, float cy) :
                            min_weight_(0.0f), width_(width), height_(height),
                            fx_(fx), fy_(fy), cx_(cx), cy_(cy),
-                           initial_frame_(true) {
+                           initial_frame_(true), failed_frames_(0) {
   // Allocate depth image on the CPU.
   depth_ = new Depth[width_ * height_];
 
@@ -47,14 +47,32 @@ FaceModeling::FaceModeling(int width, int height, float fx, float fy,
   Allocate((void**)&filtered_depth_, sizeof(Depth) * width_ * height_);
   Allocate((void**)&denoised_depth_, sizeof(Depth) * width_ * height_);
 
-  // Allocate model point-cloud on the GPU.
-  Allocate((void**)&(vertices_.x), sizeof(float) * width_ * height_);
-  Allocate((void**)&(vertices_.y), sizeof(float) * width_ * height_);
-  Allocate((void**)&(vertices_.z), sizeof(float) * width_ * height_);
+  // Allocate pyramids on the GPU.
+  for (int i = 0 ; i < kPyramidLevels; i++) {
+    Allocate((void**)&(depth_pyramid_[i]), sizeof(Depth) *
+             (width_ >> (i * kDownsampleFactor)) *
+             (height_ >> (i * kDownsampleFactor)));
 
-  Allocate((void**)&(normals_.x), sizeof(float) * width_ * height_);
-  Allocate((void**)&(normals_.y), sizeof(float) * width_ * height_);
-  Allocate((void**)&(normals_.z), sizeof(float) * width_ * height_);
+    Allocate((void**)&(vertices_[i].x), sizeof(float) *
+             (width_ >> (i * kDownsampleFactor)) *
+             (height_ >> (i * kDownsampleFactor)));
+    Allocate((void**)&(vertices_[i].y), sizeof(float) *
+             (width_ >> (i * kDownsampleFactor)) *
+             (height_ >> (i * kDownsampleFactor)));
+    Allocate((void**)&(vertices_[i].z), sizeof(float) *
+             (width_ >> (i * kDownsampleFactor)) *
+             (height_ >> (i * kDownsampleFactor)));
+
+    Allocate((void**)&(normals_[i].x), sizeof(float) *
+             (width_ >> (i * kDownsampleFactor)) *
+             (height_ >> (i * kDownsampleFactor)));
+    Allocate((void**)&(normals_[i].y), sizeof(float) *
+             (width_ >> (i * kDownsampleFactor)) *
+             (height_ >> (i * kDownsampleFactor)));
+    Allocate((void**)&(normals_[i].z), sizeof(float) *
+             (width_ >> (i * kDownsampleFactor)) *
+             (height_ >> (i * kDownsampleFactor)));
+  }
 
   Allocate((void**)&(model_vertices_.x), sizeof(float) * width_ * height_);
   Allocate((void**)&(model_vertices_.y), sizeof(float) * width_ * height_);
@@ -85,13 +103,17 @@ FaceModeling::~FaceModeling() {
   Deallocate((void*)(filtered_depth_));
   Deallocate((void*)(denoised_depth_));
 
-  Deallocate((void*)vertices_.x);
-  Deallocate((void*)vertices_.y);
-  Deallocate((void*)vertices_.z);
+  for (int i = 0 ; i < kPyramidLevels; i++) {
+    Deallocate((void*)depth_pyramid_[i]);
 
-  Deallocate((void*)normals_.x);
-  Deallocate((void*)normals_.y);
-  Deallocate((void*)normals_.z);
+    Deallocate((void*)vertices_[i].x);
+    Deallocate((void*)vertices_[i].y);
+    Deallocate((void*)vertices_[i].z);
+
+    Deallocate((void*)normals_[i].x);
+    Deallocate((void*)normals_[i].y);
+    Deallocate((void*)normals_[i].z);
+  }
 
   Deallocate((void*)model_vertices_.x);
   Deallocate((void*)model_vertices_.y);
@@ -125,12 +147,31 @@ void FaceModeling::Run(const Depth *depth, Color *normal_map) {
                         kRegistrationBilateralFilterSigmaR,
                         width_, height_, filtered_depth_, denoised_depth_);
 
-  // Construct the point-cloud by back-projecting the depth image.
-  back_projection_.Run(width_, height_, fx_, fy_, cx_, cy_,
-                       denoised_depth_, vertices_, normals_);
+  // Construct depth image pyramid.
+  Copy(depth_pyramid_[0], denoised_depth_, sizeof(Depth) * width_ * height_);
+  for (int i = 1 ; i < kPyramidLevels; i++) {
+    downsample_.Run(kDownsampleFactor, kDownsampleMaxDifference,
+                    (width_ >> ((i - 1) * kDownsampleFactor)),
+                    (height_ >> ((i - 1) * kDownsampleFactor)),
+                    (width_ >> (i * kDownsampleFactor)),
+                    (height_ >> (i * kDownsampleFactor)),
+                    depth_pyramid_[i - 1], depth_pyramid_[i]);
+  }
+
+  // Construct the point-cloud pyramid by
+  // back-projecting the depth image pyramid.
+  for (int i = 0; i < kPyramidLevels; i++) {
+    back_projection_.Run((width_ >> (i * kDownsampleFactor)),
+                         (height_ >> (i * kDownsampleFactor)),
+                         (fx_ / (1 << (i * kDownsampleFactor))),
+                         (fy_ / (1 << (i * kDownsampleFactor))),
+                         (cx_ / (1 << (i * kDownsampleFactor))),
+                         (cy_ / (1 << (i * kDownsampleFactor))),
+                         depth_pyramid_[i], vertices_[i], normals_[i]);
+  }
 
   // Compute the center of mass of the point-cloud.
-  Vertex center = centroid_.Run(width_, height_, vertices_);
+  Vertex center = centroid_.Run(width_, height_, vertices_[0]);
 
   // Register the current frame to the previous frame.
   if (!initial_frame_) {
@@ -149,17 +190,37 @@ void FaceModeling::Run(const Depth *depth, Color *normal_map) {
     transformation_ = transformation_ * frame_transformation;
 
     // Perform ICP.
-    if (icp_.Run(kICPIterations, kMinCorrespondences,
-                 kMaxRotation, kMaxTranslation,
-                 kMinErrorDifference,
-                 kDistanceThreshold, kNormalThreshold,
-                 fx_, fy_, cx_, cy_, width_, height_,
-                 width_, height_, vertices_, normals_,
-                 model_vertices_, model_normals_,
-                 previous_transformation, transformation_)) {
-      printf("Unable to integrate depth image\n");
-      transformation_ = previous_transformation;
-      return;
+    for (int i = kPyramidLevels - 1; i >= 0; i--) {
+      if (icp_.Run(kICPIterations[i],
+                   kMinCorrespondences[i + 1], kMinCorrespondences[i],
+                   kDistanceThreshold[i + 1], kDistanceThreshold[i],
+                   kNormalThreshold[i + 1], kNormalThreshold[i],
+                   kMaxRotation, kMaxTranslation,
+                   fx_, fy_, cx_, cy_,
+                   (width_ >> (i * kDownsampleFactor)),
+                   (height_ >> (i * kDownsampleFactor)),
+                   width_, height_, vertices_[i], normals_[i],
+                   model_vertices_, model_normals_,
+                   previous_transformation, transformation_)) {
+        printf("Unable to register depth image\n");
+        transformation_ = previous_transformation;
+
+        if (failed_frames_ >= kMaxFailedFrames) {
+          transformation_.setIdentity();
+
+          ray_casting_.Run(kMaxDistance, kMaxTruncation, kVolumeSize,
+                           kVolumeDimension, kVoxelDimension, min_weight_,
+                           width_, height_, fx_, fy_, cx_, cy_, volume_center_,
+                           transformation_, volume_, model_vertices_,
+                           model_normals_, normal_map_);
+
+          Download(normal_map, normal_map_, sizeof(Color) * width_ * height_);
+          previous_center_ = volume_center_;
+        }
+
+        failed_frames_++;
+        return;
+      }
     }
   }
   else {
@@ -167,6 +228,8 @@ void FaceModeling::Run(const Depth *depth, Color *normal_map) {
     // center of mass of the initial frame.
     volume_center_ = center;
   }
+
+  failed_frames_ = 0;
 
   // Integrate the segmented depth image into the volumetric model.
   bilateral_filter_.Run(kIntegrationBilateralFilterSigmaD,
@@ -176,7 +239,7 @@ void FaceModeling::Run(const Depth *depth, Color *normal_map) {
   volumetric_.Run(kVolumeSize, kVolumeDimension, kVoxelDimension,
                   kMaxTruncation, kMaxWeight, width_,  height_,
                   fx_, fy_, cx_, cy_, volume_center_, transformation_.inverse(),
-                  denoised_depth_, normals_, volume_);
+                  denoised_depth_, normals_[0], volume_);
 
   min_weight_ = MIN(min_weight_ + kMinWeightPerFrame / kMaxWeight,
                     kMaxMinWeight / kMaxWeight);

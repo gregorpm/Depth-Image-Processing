@@ -120,6 +120,19 @@ const float kIntegrationBilateralFilterSigmaD = 1.0f / (2.0f * 2.0f);
 const float kIntegrationBilateralFilterSigmaR = 1.0f / (100.0f * 100.0f);
 #endif
 
+// Number of levels in the depth pyramid.
+const int kPyramidLevels = 3;
+
+// The following parameters define how the images are downsampled. The value of
+// kDownsampleFactor determines how much the image dimensions are reduced. The
+// width and height of the image are divided by 2^kDownsampleFactor for each
+// level of the pyramid. When the images are downsampled, neighboring pixels are
+// averaged together. To avoid averaging over depth discontinuities, a
+// neighboring pixel's value must be within kDownsampleMaxDifference of the
+// center pixel to be include in the average.
+const int kDownsampleFactor = 1;
+const int kDownsampleMaxDifference = 100;
+
 // ICP is controlled using the following parameters. kICPIterations determines
 // the maximum number of iterations of ICP. In order to fail gracefully,
 // kMinCorrespondences, kMaxRotation, and kMaxTranslation are used to detect
@@ -134,13 +147,13 @@ const float kIntegrationBilateralFilterSigmaR = 1.0f / (100.0f * 100.0f);
 // quickly. Point correspondences should be near each other in space, and their
 // normals should point in a similar direction. kDistanceThreshold and
 // kNormalThreshold are used to throw away bad corresponding points.
-const int kICPIterations = 25;
-const int kMinCorrespondences = 100;
-const float kMaxRotation = 0.61f;
-const float kMaxTranslation = 100.0f;
-const float kMinErrorDifference = 0.000001f;
-const float kDistanceThreshold = 100.0f;
-const float kNormalThreshold = 0.61f;
+const int kICPIterations[kPyramidLevels] = { 20, 15, 10 };
+const int kMinCorrespondences[kPyramidLevels + 1] = { 500, 250, 50, 10 };
+const float kDistanceThreshold[kPyramidLevels + 1] = { 50.0f, 100.0f, 150.0f, 200.0f };
+const float kNormalThreshold[kPyramidLevels + 1] = { 0.524f, 0.611f, 0.698f, 0.785f };
+const float kMaxTranslation = 500.0f;
+const float kMaxRotation = 1.047f;
+const int kMaxFailedFrames = 5;
 
 // kVolumeSize determines the number of voxels along each dimension of the
 // volume, therefore, the total number of voxels is kVolumeSize^3. The physical
@@ -203,6 +216,7 @@ private:
   HeadSegmenter head_segmentation_;
   Variance variance_filter_;
   Bilateral bilateral_filter_;
+  Downsample downsample_;
   BackProjection back_projection_;
   Centroid centroid_;
   ICP icp_;
@@ -216,12 +230,13 @@ private:
   Depth *segmented_depth_;
   Depth *filtered_depth_;
   Depth *denoised_depth_;
+  Depth *depth_pyramid_[kPyramidLevels];
 
   // Point-clouds corresponding to the current depth image.
   // These buffers are allocated on the GPU. They are updated
   // in the back-projection step and used in the registration step.
-  Vertices vertices_;
-  Normals normals_;
+  Vertices vertices_[kPyramidLevels];
+  Normals normals_[kPyramidLevels];
 
   // Point-cloud corresponding to the current state of the model.
   // These bufferes are allocated on the GPU. They are updated
@@ -261,6 +276,9 @@ private:
   // Flag used to determine whether or not the current frame
   // is the initial frame.
   bool initial_frame_;
+
+  // Number of consecutive frames were registeration failed.
+  int failed_frames_;
 
   DISALLOW_COPY_AND_ASSIGN(FaceModeling);
 };

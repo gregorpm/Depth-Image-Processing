@@ -96,7 +96,7 @@ const float kBilateralFilterSigmaD = 1.0f / (1.0f * 1.0f);
 const float kBilateralFilterSigmaR = 1.0f / (50.0f * 50.0f);
 
 // Number of levels in the depth pyramid.
-const int kPyramidLevels = 2;
+const int kPyramidLevels = 3;
 
 // The following parameters define how the images are downsampled. The value of
 // kDownsampleFactor determines how much the image dimensions are reduced. The
@@ -123,13 +123,12 @@ const int kDownsampleMaxDifference = 100;
 // each other in space, and their normals should point in a similar direction.
 // kDistanceThreshold and kNormalThreshold are used to throw away bad
 // corresponding points.
-const int kICPIterations[kPyramidLevels] = { 15, 20 };
-const int kMinCorrespondences = 500;
-const float kMaxRotation = 0.61f;
-const float kMaxTranslation = 50.0f;
-const float kMinErrorDifference = 0.000001f;
-const float kDistanceThreshold = 50.0f;
-const float kNormalThreshold = 0.61f;
+const int kICPIterations[kPyramidLevels] = { 15, 10, 5 };
+const int kMinCorrespondences[kPyramidLevels + 1] = { 500, 250, 50, 10 };
+const float kDistanceThreshold[kPyramidLevels + 1] = { 50.0f, 100.0f, 150.0f, 200.0f };
+const float kNormalThreshold[kPyramidLevels + 1] = { 0.524f, 0.611f, 0.698f, 0.785f };
+const float kMaxTranslation = 500.0f;
+const float kMaxRotation = 1.047f;
 
 // kVolumeSize determines the number of voxels along each dimension of the
 // volume, therefore, the total number of voxels is kVolumeSize^3. The physical

@@ -41,10 +41,11 @@ public:
   ICP();
   ~ICP();
 
-  int Run(int max_iterations, int min_correspondences,
+  int Run(int max_iterations,
+          int min_correspondences_begin, int min_correspondences_end,
+          float distance_threshold_begin, float distance_threshold_end,
+          float normal_threshold_begin, float normal_threshold_end,
           float max_rotation, float max_translation,
-          float min_error_difference,
-          float distance_threshold, float normal_threshold,
           float fx, float fy, float cx, float cy,
           int src_width, int src_height,
           int dst_width, int dst_height,
