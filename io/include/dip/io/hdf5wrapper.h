@@ -113,6 +113,11 @@ public:
   int Write(const char *name, const char *group, const void *variable,
             hid_t datatype);
 
+  // Sets compression amount.
+  //  level - Compression level (0 = No Compress to 9 = Best Compression).
+  // Returns zero when successful.
+  int Compression(int level);
+
   // Returns true if the HDF5 file was successfully opened.
   bool enabled() const { return enabled_; }
 
@@ -164,6 +169,8 @@ private:
 
   int mode_;
   bool enabled_;
+
+  int compression_;
 
   // Id of HDF5 file.
   hid_t h5file_;

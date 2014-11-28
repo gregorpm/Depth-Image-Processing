@@ -35,7 +35,7 @@ using namespace std;
 namespace dip {
 
 HDF5Wrapper::HDF5Wrapper(const char* file_name, int mode)
-    : enabled_(false), h5file_(-1) {
+    : enabled_(false), h5file_(-1), compression_(0) {
   // Disable HDF5 Error Messages
   H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
 
@@ -119,6 +119,17 @@ int HDF5Wrapper::Write(const char *name, const char *group,
   return -1;
 }
 
+int HDF5Wrapper::Compression(int level) {
+  if (enabled_ && (mode_ & (MODIFY_HDF5 | CREATE_HDF5))) {
+    if ((level >=0) && (level <= 9)) {
+      compression_ = level;
+      return 0;
+    }
+  }
+
+  return -1;
+}
+
 int HDF5Wrapper::ReadData(hid_t h5_file, const char *name, const char *group,
                           void *buffer, const hsize_t *dimensions,
                           int number_dimensions, hid_t datatype) const {
@@ -195,9 +206,24 @@ int HDF5Wrapper::WriteData(hid_t h5_file, const char *name, const char *group,
     data_space = H5Screate_simple(number_dimensions, dimensions, NULL);
 
     if (data_space != -1) {
+      // Create Properties for Compression
+      hid_t property = H5P_DEFAULT;
+
+      if (compression_ > 0) {
+        property = H5Pcreate(H5P_DATASET_CREATE);
+
+        hsize_t *chunk_sizes = new hsize_t[number_dimensions];
+        for (int n = 0; n < number_dimensions; n++)
+          chunk_sizes[n] = MAX(dimensions[n] / 8, 1);
+        H5Pset_chunk(property, number_dimensions, chunk_sizes);
+        delete [] chunk_sizes;
+
+        H5Pset_deflate(property, compression_);
+      }
+
       // Create Data Set
       data_set = H5Dcreate2(data_group, name, datatype, data_space,
-                            H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+                            H5P_DEFAULT, property, H5P_DEFAULT);
 
       if (data_set == -1)
         return -1;
