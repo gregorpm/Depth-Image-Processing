@@ -64,34 +64,41 @@ __global__ void BilateralFilter(float sigma_d, float sigma_r,
     float center_depth = ds[ty][tx];
     float h = 0.0f, k = 0.0f;
 
-    for (int dy = -FILTER_HALF_WIDTH; dy <= FILTER_HALF_WIDTH; dy++) {
-      for (int dx = -FILTER_HALF_WIDTH; dx <= FILTER_HALF_WIDTH; dx++) {
-        int x = col + dx;
-        int y = row + dy;
+    if (center_depth > 0) {
+      for (int dy = -FILTER_HALF_WIDTH; dy <= FILTER_HALF_WIDTH; dy++) {
+        for (int dx = -FILTER_HALF_WIDTH; dx <= FILTER_HALF_WIDTH; dx++) {
+          int x = col + dx;
+          int y = row + dy;
 
-        if ((x >= 0) && (x < width) && (y >= 0) && (y < height)) {
-          int i = tx + dx;
-          int j = ty + dy;
+          if ((x >= 0) && (x < width) && (y >= 0) && (y < height)) {
+            int i = tx + dx;
+            int j = ty + dy;
 
-          float current_depth;
-          if ((i >= 0) && (i < BLOCK_WIDTH) && (j >= 0) && (j < BLOCK_WIDTH))
-            current_depth = ds[j][i];
-          else
-            current_depth = depth[x + y * width];
+            float current_depth;
+            if ((i >= 0) && (i < BLOCK_WIDTH) && (j >= 0) && (j < BLOCK_WIDTH))
+              current_depth = ds[j][i];
+            else
+              current_depth = depth[x + y * width];
 
-          float d = static_cast<float>((dx * dx) + (dy * dy));
-          float r = static_cast<float>((current_depth - center_depth) *
-                                       (current_depth - center_depth));
+            if (current_depth > 0) {
+              float d = static_cast<float>((dx * dx) + (dy * dy));
+              float r = static_cast<float>((current_depth - center_depth) *
+                                           (current_depth - center_depth));
 
-          float weight = __expf(-0.5f * (d * sigma_d + r * sigma_r));
+              float weight = __expf(-0.5f * (d * sigma_d + r * sigma_r));
 
-          h += current_depth * weight;
-          k += weight;
+              h += current_depth * weight;
+              k += weight;
+            }
+          }
         }
       }
     }
 
-    filtered_depth[col + row * width] = h / k;
+    if (k > 0.0f)
+      filtered_depth[col + row * width] = h / k;
+    else
+      filtered_depth[col + row * width] = 0;
   }
 }
 
