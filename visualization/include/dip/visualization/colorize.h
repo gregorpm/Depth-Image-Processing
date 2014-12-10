@@ -38,10 +38,16 @@ class Colorize {
 public:
   Colorize() {};
 
-  void Run(int width, int height, const Depth *depth, Color *colorized_depth);
+  void Run(int width, int height, const Depth *input, Color *output);
+  void Run(int width, int height, const int *input, Color *output);
+  void Run(int width, int height, const float *input, Color *output);
 
-  void Run(int width, int height, int min_depth, int max_depth,
-           const Depth *depth, Color *colorized_depth);
+  void Run(int width, int height, int min_value, int max_value,
+           const Depth *input, Color *output);
+  void Run(int width, int height, int min_value, int max_value,
+           const int *input, Color *output);
+  void Run(int width, int height, float min_value, float max_value,
+           const float *input, Color *output);
 
 private:
   Color jet(float value, float min, float max);

@@ -30,24 +30,61 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace dip {
 
-void Colorize::Run(int width, int height, const Depth *depth,
-                   Color *colorized_depth) {
-  int min_depth, max_depth;
-  min_depth = max_depth = depth[0];
+void Colorize::Run(int width, int height, const Depth *input, Color *output) {
+  int min_value, max_value;
+  min_value = max_value = input[0];
 
   for (int i = 1; i < (width * height); i++) {
-    min_depth = MIN(depth[i], min_depth);
-    max_depth = MAX(depth[i], max_depth);
+    min_value = MIN(input[i], min_value);
+    max_value = MAX(input[i], max_value);
   }
 
   for (int i = 0; i < (width * height); i++)
-    colorized_depth[i] = jet(depth[i], min_depth, max_depth);
+    output[i] = jet(input[i], min_value, max_value);
 }
 
-void Colorize::Run(int width, int height, int min_depth, int max_depth,
-                   const Depth *depth, Color *colorized_depth) {
+void Colorize::Run(int width, int height, const int *input, Color *output) {
+  int min_value, max_value;
+  min_value = max_value = input[0];
+
+  for (int i = 1; i < (width * height); i++) {
+    min_value = MIN(input[i], min_value);
+    max_value = MAX(input[i], max_value);
+  }
+
   for (int i = 0; i < (width * height); i++)
-    colorized_depth[i] = jet(depth[i], min_depth, max_depth);
+    output[i] = jet(input[i], min_value, max_value);
+}
+
+void Colorize::Run(int width, int height, const float *input, Color *output) {
+  float min_value, max_value;
+  min_value = max_value = input[0];
+
+  for (int i = 1; i < (width * height); i++) {
+    min_value = MIN(input[i], min_value);
+    max_value = MAX(input[i], max_value);
+  }
+
+  for (int i = 0; i < (width * height); i++)
+    output[i] = jet(input[i], min_value, max_value);
+}
+
+void Colorize::Run(int width, int height, int min_value, int max_value,
+                   const Depth *input, Color *output) {
+  for (int i = 0; i < (width * height); i++)
+    output[i] = jet(input[i], min_value, max_value);
+}
+
+void Colorize::Run(int width, int height, int min_value, int max_value,
+                   const int *input, Color *output) {
+  for (int i = 0; i < (width * height); i++)
+    output[i] = jet(input[i], min_value, max_value);
+}
+
+void Colorize::Run(int width, int height, float min_value, float max_value,
+                   const float *input, Color *output) {
+  for (int i = 0; i < (width * height); i++)
+    output[i] = jet(input[i], min_value, max_value);
 }
 
 Color Colorize::jet(float value, float min, float max) {
