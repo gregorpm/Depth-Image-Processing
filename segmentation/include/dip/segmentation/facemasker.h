@@ -29,7 +29,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef DIP_SEGMENTATION_FACEMASKER_H
 #define DIP_SEGMENTATION_FACEMASKER_H
 
-#include <dip/common/distance.h>
 #include <dip/common/types.h>
 #include <dip/common/macros.h>
 #include <opencv2/objdetect/objdetect.hpp>
@@ -38,29 +37,46 @@ namespace dip {
 
 class FaceMasker : public cv::CascadeClassifier::MaskGenerator {
 public:
-  FaceMasker() : boundary_(NULL), distances_(NULL),
-                 min_sizes_(NULL), max_sizes_(NULL), size_(0) {}
+  FaceMasker() : valid_mask_(NULL), head_mask_(NULL), depth_integral_(NULL),
+                 valid_integral_(NULL), head_integral_(NULL),
+                 min_sizes_(NULL), max_sizes_(NULL),
+                 size_(0), frame_(0), scale_(0) {}
   ~FaceMasker();
 
-  void Run(int max_difference, int min_depth, int max_depth,
-           float min_face_size, float max_face_size, int window_size,
-           int width, int height, float focal_length, const Depth *depth);
+  void Run(int min_depth, int min_pixels, int open_size,
+           int head_width, int head_height, int head_depth,
+           int face_size, int extended_size, int window_size,
+           int width, int height, float focal_length,
+           const Depth *depth, Color *color);
 
   // MaskGenerator functions.
   cv::Mat generateMask(const cv::Mat& src);
   void initializeMask(const cv::Mat& src) {}
 
 private:
-  Distance distance_;
+  void Integral(int width, int height, bool *valid, const Depth *depth,
+                int *integral);
+  void Integral(int width, int height, bool flag, const bool *mask,
+                int *integral);
 
-  bool *boundary_;
-  unsigned int *distances_;
+  void Erode(int width, int height, int half_window, const int *integral,
+             bool *mask);
+  void Dilate(int width, int height, int half_window, const int *integral,
+              bool *mask);
 
-  float *min_sizes_;
-  float *max_sizes_;
+  int Sum(int width, int height, int left, int right, int top, int bottom,
+          const int *integral);
+  int Mean(int width, int height, int left, int right, int top, int bottom,
+           const int *value_integral, const int *valid_integral);
+
+  bool *valid_mask_, *head_mask_;
+  int *depth_integral_, *valid_integral_, *head_integral_;
+
+  float *min_sizes_, *max_sizes_;
 
   int window_size_;
   int width_, height_, size_;
+  int frame_, scale_;
 
   DISALLOW_COPY_AND_ASSIGN(FaceMasker);
 };
