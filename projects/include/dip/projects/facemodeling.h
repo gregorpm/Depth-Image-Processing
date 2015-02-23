@@ -203,7 +203,11 @@ public:
   //  normal_map - Normal map of the model rendered from the same viewpoint as
   //               the depth image. The dimensions should be the same as the
   //               depth image.
-  void Run(const Depth *depth, Color *normal_map);
+  //  transform  - Transformation matrix from the current frames coordinate
+  //               system to the global coordinate system.
+  // Returns zero on success.
+  int Run(const Depth *depth, Color *normal_map = NULL,
+          Eigen::Matrix4f *transform = NULL);
 
   // Generate Model's mesh using Marching Cubes.
   //  mesh - Pointer to mesh data structure. Marching cubes will add the model's

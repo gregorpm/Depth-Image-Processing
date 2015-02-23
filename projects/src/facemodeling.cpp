@@ -128,14 +128,15 @@ FaceModeling::~FaceModeling() {
   Deallocate((void*)normal_map_);
 }
 
-void FaceModeling::Run(const Depth *depth, Color *normal_map) {
+int FaceModeling::Run(const Depth *depth, Color *normal_map,
+                      Matrix4f *transform) {
   // Segment the user's head from the depth image.
   if (head_segmentation_.Run(kMinDepth, kMaxDepth, kMaxDifference,
                              kMinHeadWidth, kMinHeadHeight,
                              kMaxHeadWidth, kMaxHeadHeight,
                              fx_, fy_, width_, height_, depth, depth_)) {
     printf("Unable to segment user's head from depth image\n");
-    return;
+    return -1;
   }
 
   // Upload the segmented depth image from the CPU to the GPU.
@@ -219,7 +220,7 @@ void FaceModeling::Run(const Depth *depth, Color *normal_map) {
         }
 
         failed_frames_++;
-        return;
+        return -1;
       }
     }
   }
@@ -253,12 +254,16 @@ void FaceModeling::Run(const Depth *depth, Color *normal_map) {
                    volume_, model_vertices_, model_normals_, normal_map_);
 
   // Download the normal map from the GPU to the CPU.
-  Download(normal_map, normal_map_, sizeof(Color) * width_ * height_);
+  if (normal_map != NULL)
+    Download(normal_map, normal_map_, sizeof(Color) * width_ * height_);
+  if (transform != NULL)
+    *transform = transformation_;
 
   // Update Model Center
   previous_center_ = center;
 
   initial_frame_ = false;
+  return 0;
 }
 
 void FaceModeling::Model(Mesh *mesh) {

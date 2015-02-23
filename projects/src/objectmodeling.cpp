@@ -121,7 +121,8 @@ ObjectModeling::~ObjectModeling() {
   Deallocate((void*)normal_map_);
 }
 
-void ObjectModeling::Run(const Depth *depth, Color *normal_map) {
+int ObjectModeling::Run(const Depth *depth, Color *normal_map,
+                        Matrix4f *transform) {
   // Upload the depth image from the CPU to the GPU.
   Upload(depth_, depth, sizeof(Depth) * width_ * height_);
 
@@ -172,7 +173,7 @@ void ObjectModeling::Run(const Depth *depth, Color *normal_map) {
                    previous_transformation, transformation_)) {
         printf("Unable to integrate depth image\n");
         transformation_ = previous_transformation;
-        return;
+        return -1;
       }
     }
   }
@@ -197,9 +198,13 @@ void ObjectModeling::Run(const Depth *depth, Color *normal_map) {
                    model_normals_, normal_map_);
 
   // Download the normal map from the GPU to the CPU.
-  Download(normal_map, normal_map_, sizeof(Color) * width_ * height_);
+  if (normal_map != NULL)
+    Download(normal_map, normal_map_, sizeof(Color) * width_ * height_);
+  if (transform != NULL)
+    *transform = transformation_;
 
   initial_frame_ = false;
+  return 0;
 }
 
 void ObjectModeling::Model(Mesh *mesh) {
