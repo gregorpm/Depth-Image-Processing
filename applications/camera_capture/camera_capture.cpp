@@ -37,6 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <dip/cameras/primesense.h>
 #include <dip/cameras/softkinetic.h>
 #include <dip/common/types.h>
+#include <dip/io/hdf5dumper.h>
 #include <dip/io/hdf5wrapper.h>
 #include <dip/visualization/colorize.h>
 
@@ -52,6 +53,7 @@ const int kMaxDepth = 8192;
 
 Camera *g_camera = NULL;
 HDF5Wrapper *g_dump = NULL;
+HDF5Dumper *g_dumper = NULL;
 
 Depth *g_depth = NULL;
 Color *g_colorized_depth = NULL;
@@ -63,6 +65,8 @@ int g_display = DEPTH_SENSOR;
 void close() {
   if (g_camera != NULL)
     delete g_camera;
+  if (g_dumper != NULL)
+    delete g_dumper;
   if (g_dump != NULL)
     delete g_dump;
 
@@ -108,20 +112,20 @@ void display() {
   dimensions[0] = (hsize_t)g_camera->height(DEPTH_SENSOR);
   dimensions[1] = (hsize_t)g_camera->width(DEPTH_SENSOR);
 
-  if (g_dump->Write("DEPTH", group, g_depth, dimensions, 2, H5T_NATIVE_SHORT)) {
-    printf("Unable to dump depth image.\n");
-    close();
-  }
+  g_dumper->Write("DEPTH", group, g_depth, sizeof(Depth) *
+                  g_camera->width(DEPTH_SENSOR) *
+                  g_camera->height(DEPTH_SENSOR),
+                  dimensions, 2, H5T_NATIVE_SHORT);
 
   // Dump color image.
   dimensions[0] = (hsize_t)g_camera->height(COLOR_SENSOR);
   dimensions[1] = (hsize_t)g_camera->width(COLOR_SENSOR);
   dimensions[2] = 3;
 
-  if (g_dump->Write("COLOR", group, g_color, dimensions, 3, H5T_NATIVE_UCHAR)) {
-    printf("Unable to dump color image.\n");
-    close();
-  }
+  g_dumper->Write("COLOR", group, g_color, sizeof(Color) *
+                  g_camera->width(COLOR_SENSOR) *
+                  g_camera->height(COLOR_SENSOR),
+                  dimensions, 3, H5T_NATIVE_UCHAR);
 
   count++;
 
@@ -197,8 +201,8 @@ void timer(int fps) {
 }
 
 int main(int argc, char **argv) {
-  if (argc != 2) {
-    printf("Usage: %s <Dump File>\n", argv[0]);
+  if (argc != 3) {
+    printf("Usage: %s <Dump File> <Compression Level>\n", argv[0]);
     return -1;
   }
 
@@ -218,6 +222,10 @@ int main(int argc, char **argv) {
 
   // Initialize dump file.
   g_dump = new HDF5Wrapper(argv[1], CREATE_HDF5);
+  g_dump->Compression(atoi(argv[2]));
+
+  // Initialize dumper.
+  g_dumper = new HDF5Dumper(g_dump);
 
   if (!g_dump->enabled()) {
     printf("Unable to Create Dump File\n");
