@@ -181,6 +181,7 @@ public:
   //         vertices, faces, and edges to data structure.
   void Model(Mesh *mesh);
 
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 private:
   // Modules used to construct the 3D model.
   Threshold threshold_filter_;

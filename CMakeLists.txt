@@ -28,8 +28,10 @@ endif()
 find_package(DepthSense REQUIRED)
 # Eigen
 find_package(Eigen REQUIRED)
-# GLUT
-find_package(GLUT REQUIRED)
+# GLEW
+find_package(GLEW REQUIRED)
+# GLFW
+find_package(GLFW REQUIRED)
 # HDF5
 find_package(HDF5 REQUIRED)
 # OpenCV
@@ -43,6 +45,11 @@ find_package(OpenMP)
 if (OPENMP_FOUND)
   set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+endif()
+# X11
+if(UNIX)
+  find_package(X11 REQUIRED)
+  set(X11_LIBS ${X11_Xrandr_LIB} ${X11_Xxf86vm_LIB} ${X11_Xi_LIB} ${X11_Xinerama_LIB} ${X11_Xcursor_LIB})
 endif()
 
 set(MODULE_NAMES

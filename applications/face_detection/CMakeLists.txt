@@ -32,9 +32,11 @@ set(SRCS
     )
 
 set(LIBS
-    ${GLUT_LIBRARIES}
+    ${GLEW_LIBRARIES}
+    ${GLFW_LIBRARIES}
     ${OpenCV_LIBRARIES}
     ${OPENGL_LIBRARIES}
+    ${X11_LIBS}
     ${MODULE_DEPENDENCIES}
     )
 

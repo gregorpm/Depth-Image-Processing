@@ -7,8 +7,8 @@ copy_file("hdf5_cpp.dll" "${HDF5_INCLUDE_DIR}/../bin")
 copy_file("szip.dll" "${HDF5_INCLUDE_DIR}/../bin")
 copy_file("zlib.dll" "${HDF5_INCLUDE_DIR}/../bin")
 
-# Copy and Install GLUT DLLs
-copy_file("freeglut.dll" "${GLUT_INCLUDE_DIR}/../bin")
+# Copy and Install GLEW DLLs
+copy_file("glew32.dll" "${GLEW_INCLUDE_DIRS}/../bin/Release/Win32")
 
 # Copy and Install OpenNI2 DLLs
 copy_file("OpenNI2.dll" "${OPENNI2_INCLUDE_DIRS}/../Redist")

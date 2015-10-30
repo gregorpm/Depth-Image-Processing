@@ -31,7 +31,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 
 // OpenGL
-#include <GL/glut.h>
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
 
 // DIP
 #include <dip/cameras/camera.h>
@@ -41,106 +42,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <dip/io/objfile.h>
 #include <dip/projects/objectmodeling.h>
 #include <dip/surface/mesh.h>
+#include <dip/visualization/colorize.h>
 
 using namespace dip;
 
 const int kWindowWidth = 640;
 const int kWindowHeight = 480;
 
-const int kFramesPerSecond = 60;
-
-Camera *g_camera = NULL;
-ObjectModeling *g_modeling = NULL;
-OBJFile *g_obj_file = NULL;
-
-Depth *g_depth = NULL;
-Color *g_normals = NULL;
-
-GLuint g_texture;
-
-void close() {
-  if (g_obj_file->enabled()) {
-    Mesh mesh;
-    g_modeling->Model(&mesh);
-    g_obj_file->Write(&mesh);
-  }
-
-  if (g_camera != NULL)
-    delete g_camera;
-  if (g_modeling != NULL)
-    delete g_modeling;
-  if (g_obj_file != NULL)
-    delete g_obj_file;
-
-  if (g_depth != NULL)
-    delete [] g_depth;
-  if (g_normals != NULL)
-    delete [] g_normals;
-
-  exit(0);
-}
-
-void display() {
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
-
-  glOrtho(0.0f, 1.0f, 0.0f, 1.0f, -10.0f, 10.0f);
-
-  // Update Frame
-  if (g_camera->Update(g_depth)) {
-    printf("Unable to Update Frame\n");
-    close();
-  }
-
-  // Update Model
-  g_modeling->Run(g_depth, g_normals);
-
-  // Update Texture
-  glEnable(GL_TEXTURE_2D);
-
-  glBindTexture(GL_TEXTURE_2D, g_texture);
-
-  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, g_camera->width(DEPTH_SENSOR),
-                  g_camera->height(DEPTH_SENSOR), GL_RGB, GL_UNSIGNED_BYTE,
-                  g_normals);
-
-  glDisable(GL_TEXTURE_2D);
-
-  // Display Frame
-  glEnable(GL_TEXTURE_2D);
-
-  glBindTexture(GL_TEXTURE_2D, g_texture);
-
-  glBegin(GL_QUADS);
-    glTexCoord2f(0.0f, 1.0f); glVertex3f(0.0f, 0.0f, 0.0f);
-    glTexCoord2f(0.0f, 0.0f); glVertex3f(0.0f, 1.0f, 0.0f);
-    glTexCoord2f(1.0f, 0.0f); glVertex3f(1.0f, 1.0f, 0.0f);
-    glTexCoord2f(1.0f, 1.0f); glVertex3f(1.0f, 0.0f, 0.0f);
-  glEnd();
-
-  glDisable(GL_TEXTURE_2D);
-
-  glutSwapBuffers();
-}
-
-void reshape(int w, int h) {
-  glViewport(0, 0, w, h);
-}
-
-void keyboard(unsigned char key, int x, int y) {
-  switch (key) {
-  // Quit Program
-  case 27:
-    close();
-    break;
-  }
-}
-
-void timer(int fps) {
-  glutPostRedisplay();
-  glutTimerFunc(1000 / fps, timer, fps);
+static void key_callback(GLFWwindow* window, int key, int scancode,
+                         int action, int mods) {
+  if ((key == GLFW_KEY_ESCAPE) && (action == GLFW_PRESS))
+    glfwSetWindowShouldClose(window, GL_TRUE);
 }
 
 int main(int argc, char **argv) {
@@ -149,62 +61,170 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  glutInit(&argc, argv);
-
   // Initialize Camera
-  if (argc > 2)
-    g_camera = new DumpFile(argv[2]);
-  else
-    g_camera = new PrimeSense();
+  Camera *camera = NULL;
+  if (argc < 3) {
+#ifndef SOFTKINETIC
+    camera = new PrimeSense();
+#else
+    camera = new SoftKinetic();
+#endif
+  } else {
+    camera = new DumpFile(argv[2]);
+  }
 
-  if (!g_camera->enabled()) {
+  if (!camera->enabled()) {
     printf("Unable to Open Camera\n");
     return -1;
   }
 
   // Initialize 3D Modeling
-  g_modeling = new ObjectModeling(g_camera->width(DEPTH_SENSOR),
-                                  g_camera->height(DEPTH_SENSOR),
-                                  g_camera->fx(DEPTH_SENSOR),
-                                  g_camera->fy(DEPTH_SENSOR),
-                                  g_camera->width(DEPTH_SENSOR) / 2.0f,
-                                  g_camera->height(DEPTH_SENSOR) / 2.0f);
-
-  g_obj_file = new OBJFile(argv[1], CREATE_OBJ);
+  ObjectModeling *modeling = new ObjectModeling(
+      camera->width(DEPTH_SENSOR), camera->height(DEPTH_SENSOR),
+      camera->fx(DEPTH_SENSOR), camera->fy(DEPTH_SENSOR),
+      camera->width(DEPTH_SENSOR) / 2.0f, camera->height(DEPTH_SENSOR) / 2.0f);
 
   // Initialize Buffers
-  g_depth = new Depth[g_camera->width(DEPTH_SENSOR) *
-                      g_camera->height(DEPTH_SENSOR)];
-  g_normals = new Color[g_camera->width(DEPTH_SENSOR) *
-                        g_camera->height(DEPTH_SENSOR)];
+  Depth *depth = new Depth[camera->width(DEPTH_SENSOR) *
+                           camera->height(DEPTH_SENSOR)];
+  Color *colorized_depth = new Color[camera->width(DEPTH_SENSOR) *
+                                     camera->height(DEPTH_SENSOR)];
+  Color *color = new Color[camera->width(COLOR_SENSOR) *
+                           camera->height(COLOR_SENSOR)];
+  Color *normals = new Color[camera->width(DEPTH_SENSOR) *
+                             camera->height(DEPTH_SENSOR)];
 
-  // Initialize OpenGL
-  glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-  glutInitWindowSize(kWindowWidth, kWindowHeight);
-  glutInitWindowPosition(100, 100);
-  glutCreateWindow("3D Modeling");
+  // Initialize GLFW
+  if (!glfwInit()) {
+    printf("Unable to Initialize GLFW.\n");
+    return -1;
+  }
 
-  glutDisplayFunc(display);
-  glutReshapeFunc(reshape);
-  glutKeyboardFunc(keyboard);
-  glutTimerFunc(1000 / kFramesPerSecond, timer, kFramesPerSecond);
+  GLFWwindow *window = glfwCreateWindow(kWindowWidth * 3, kWindowHeight,
+                                        "3D Modeling", NULL, NULL);
+
+  if (!window) {
+    printf("Unable to create window.\n");
+    glfwTerminate();
+    return -1;
+  }
+
+  glfwMakeContextCurrent(window);
+  glfwSetKeyCallback(window, key_callback);
 
   // Initialize Texture
+  GLuint textures[3];
   glEnable(GL_TEXTURE_2D);
+  glGenTextures(3, textures);
 
-  glGenTextures(1, &g_texture);
-  glBindTexture(GL_TEXTURE_2D, g_texture);
+  for (int i = 0; i < 3; i++) {
+    glBindTexture(GL_TEXTURE_2D, textures[i]);
 
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, g_camera->width(DEPTH_SENSOR),
-               g_camera->height(DEPTH_SENSOR), 0, GL_RGB, GL_UNSIGNED_BYTE,
-               NULL);
+    if (i == 0) {
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
+                   camera->width(COLOR_SENSOR), camera->height(COLOR_SENSOR),
+                   0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    } else {
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
+                   camera->width(DEPTH_SENSOR), camera->height(DEPTH_SENSOR),
+                   0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    }
+  }
 
-  glDisable(GL_TEXTURE_2D);
+  Colorize colorize;
+  while (!glfwWindowShouldClose(window)) {
+    // Update depth image.
+    if (camera->Update(depth)) {
+      printf("Unable to update depth image.\n");
+      break;
+    }
 
-  glutMainLoop();
+    // Update color image.
+    if (camera->Update(color)) {
+      printf("Unable to update color image.\n");
+      break;
+    }
+
+    // Update Model
+    modeling->Run(depth, normals);
+
+    // Colorize depth image.
+    colorize.Run(camera->width(DEPTH_SENSOR), camera->height(DEPTH_SENSOR),
+                 depth, colorized_depth);
+
+    glfwMakeContextCurrent(window);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0.0f, 1.0f, 0.0f, 1.0f, -10.0f, 10.0f);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+    glViewport(0, 0, kWindowWidth, kWindowHeight);
+    glBindTexture(GL_TEXTURE_2D, textures[0]);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
+                    camera->width(COLOR_SENSOR), camera->height(COLOR_SENSOR),
+                    GL_RGB, GL_UNSIGNED_BYTE, color);
+
+    glBegin(GL_QUADS);
+      glTexCoord2f(0.0f, 1.0f); glVertex3f(0.0f, 0.0f, 0.0f);
+      glTexCoord2f(0.0f, 0.0f); glVertex3f(0.0f, 1.0f, 0.0f);
+      glTexCoord2f(1.0f, 0.0f); glVertex3f(1.0f, 1.0f, 0.0f);
+      glTexCoord2f(1.0f, 1.0f); glVertex3f(1.0f, 0.0f, 0.0f);
+    glEnd();
+
+    glViewport(kWindowWidth, 0, kWindowWidth, kWindowHeight);
+    glBindTexture(GL_TEXTURE_2D, textures[1]);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
+                    camera->width(DEPTH_SENSOR), camera->height(DEPTH_SENSOR),
+                    GL_RGB, GL_UNSIGNED_BYTE, colorized_depth);
+
+    glBegin(GL_QUADS);
+      glTexCoord2f(0.0f, 1.0f); glVertex3f(0.0f, 0.0f, 0.0f);
+      glTexCoord2f(0.0f, 0.0f); glVertex3f(0.0f, 1.0f, 0.0f);
+      glTexCoord2f(1.0f, 0.0f); glVertex3f(1.0f, 1.0f, 0.0f);
+      glTexCoord2f(1.0f, 1.0f); glVertex3f(1.0f, 0.0f, 0.0f);
+    glEnd();
+
+    glViewport(2 * kWindowWidth, 0, kWindowWidth, kWindowHeight);
+    glBindTexture(GL_TEXTURE_2D, textures[2]);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
+                    camera->width(DEPTH_SENSOR), camera->height(DEPTH_SENSOR),
+                    GL_RGB, GL_UNSIGNED_BYTE, normals);
+
+    glBegin(GL_QUADS);
+      glTexCoord2f(0.0f, 1.0f); glVertex3f(0.0f, 0.0f, 0.0f);
+      glTexCoord2f(0.0f, 0.0f); glVertex3f(0.0f, 1.0f, 0.0f);
+      glTexCoord2f(1.0f, 0.0f); glVertex3f(1.0f, 1.0f, 0.0f);
+      glTexCoord2f(1.0f, 1.0f); glVertex3f(1.0f, 0.0f, 0.0f);
+    glEnd();
+
+    glfwSwapBuffers(window);
+    glfwPollEvents();
+  }
+
+  glfwDestroyWindow(window);
+  glfwTerminate();
+
+  OBJFile obj_file(argv[1], CREATE_OBJ);
+  if (obj_file.enabled()) {
+    Mesh mesh;
+    modeling->Model(&mesh);
+
+    obj_file.Write(&mesh);
+  }
+
+  delete camera;
+  delete modeling;
+  delete [] depth;
+  delete [] colorized_depth;
+  delete [] color;
+  delete [] normals;
 
   return 0;
 }
