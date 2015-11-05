@@ -1,13 +1,5 @@
 function(copy_file filename directory)
-  # Clear file location.
-  set(file_location "file_location-NOTFOUND")
-
-  # Find file.
-  find_file(file_location
-    NAMES ${filename}
-    PATHS ${directory}
-    PATH_SUFFIXES "Release" "Debug"
-  )
+  set(file_location ${directory}/${filename})
 
   # Copy file to working directory.
   add_custom_command(TARGET ${APPICATION_NAME} POST_BUILD COMMAND

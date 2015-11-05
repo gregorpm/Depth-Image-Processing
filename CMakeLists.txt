@@ -33,7 +33,7 @@ find_package(GLEW REQUIRED)
 # GLFW
 find_package(GLFW REQUIRED)
 # HDF5
-find_package(HDF5 REQUIRED)
+find_package(HDF5 REQUIRED NO_MODULE)
 # OpenCV
 find_package(OpenCV REQUIRED)
 # OpenGL
